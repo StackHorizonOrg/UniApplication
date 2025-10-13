@@ -60,7 +60,6 @@ export default function NextLessonCard({
     }
   }, [data?.lessons, dayOffset]);
 
-  console.log("Data:", data);
   if (isLoading) {
     return (
       <div className="w-full max-w-md mx-auto bg-white dark:bg-black border border-gray-200 dark:border-gray-900 rounded-2xl overflow-hidden">
@@ -143,6 +142,11 @@ export default function NextLessonCard({
   );
   const materiaColorMap = getMateriaColorMap(allMaterie);
 
+  const getDate = (offset: number): string =>{
+      const today  = new Date();
+      today.setDate(today.getDate() + offset);
+      return today.getDate() + "/" + (today.getMonth() + 1) + "/" + today.getFullYear();
+  }
   const getMateriaColorDot = (materia: string) => {
     const normalizedMateria = materia
       .normalize("NFD")
@@ -174,7 +178,7 @@ export default function NextLessonCard({
                 <ChevronLeft className="w-3 h-3 text-gray-900 dark:text-white" />
               </button>
               <span className="text-xs text-gray-900 dark:text-white font-mono px-2 min-w-12 text-center">
-                {dayOffset === 0 ? "oggi" : `+${dayOffset}`}
+                {getDate(dayOffset)}
               </span>
               <button
                 onClick={() => setDayOffset(dayOffset + 1)}
@@ -241,7 +245,7 @@ export default function NextLessonCard({
               <ChevronLeft className="w-3 h-3 text-gray-900 dark:text-white" />
             </button>
             <span className="text-xs text-gray-900 dark:text-white font-mono px-2 min-w-12 text-center">
-              {dayOffset === 0 ? "oggi" : `+${dayOffset}`}
+              {getDate(dayOffset)}
             </span>
             <button
               onClick={() => {

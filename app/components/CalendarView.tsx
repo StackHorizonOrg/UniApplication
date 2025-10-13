@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { CalendarDayDialog } from "@/app/components/CalendarDayDialog";
 import { getCurrentItalianDateTime, getDayOfWeek } from "@/lib/date-utils";
 import type { DaySchedule, ParsedEvent } from "@/lib/orario-utils";
