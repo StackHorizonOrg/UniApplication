@@ -10,61 +10,63 @@ import {
     User,
 } from "lucide-react";
 import {useEffect, useState} from "react";
-import {api} from "@/lib/api";
-import type {DaySchedule} from "@/lib/orario-utils";
 import {getMateriaColorMap, parseEventTitle} from "@/lib/orario-utils";
 
-export default function NextLessonCard({
-                                           schedule,
-                                       }: {
-    schedule: DaySchedule[];
-}) {
+export default function NextLessonCard() {
     const [dayOffset, setDayOffset] = useState(0);
     const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
+    const [data, setData] = useState<any>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const {data, isLoading, error} = api.orario.getNextLesson.useQuery({
-        dayOffset,
-    });
+    useEffect(() => {
+        setIsLoading(true);
+        setError(null);
+        fetch(`https://orario.zimaserver.it/api/public/orario/next-lesson?dayOffset=${dayOffset}`)
+            .then((res) => {
+                if (!res.ok) throw new Error("Errore nella fetch");
+                return res.json();
+            })
+            .then((json) => {
+                setData(json);
+                setIsLoading(false);
+            })
+            .catch((err) => {
+                setError(err.message);
+                setIsLoading(false);
+            });
+    }, [dayOffset]);
 
-    // Calcola l'indice della lezione più vicina quando i dati cambiano
     useEffect(() => {
         if (data?.lessons && data.lessons.length > 0 && dayOffset === 0) {
-            // Solo per oggi (dayOffset === 0) troviamo la lezione più vicina
             const now = new Date();
             const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
             let closestIndex = 0;
             let minDiff = Infinity;
-
-            data.lessons.forEach((lesson, index) => {
+            data.lessons.forEach((lesson:any, index:any) => {
                 const timeRange = lesson.time.split(" - ");
                 if (timeRange.length === 2) {
                     const [hours, minutes] = timeRange[0].split(":").map(Number);
                     const startMinutes = hours * 60 + minutes;
-
-                    // Calcola la differenza assoluta
                     const diff = Math.abs(startMinutes - currentMinutes);
-
-                    // Se questa lezione è più vicina, aggiorna l'indice
                     if (diff < minDiff) {
                         minDiff = diff;
                         closestIndex = index;
                     }
                 }
             });
-
             setCurrentLessonIndex(closestIndex);
-        } else {
-            // Per gli altri giorni, inizia dalla prima lezione
+        } else if (data?.lessons && data.lessons.length > 0) {
             setCurrentLessonIndex(0);
         }
     }, [data?.lessons, dayOffset]);
+
     const getDate = (offset: number): string => {
         const today = new Date();
         today.setDate(today.getDate() + offset);
         return today.getDate() + "/" + (today.getMonth() + 1) + "/" + today.getFullYear();
-    }
-    console.log("Data:", data);
+    };
+
     if (isLoading) {
         return (
             <div
@@ -147,7 +149,7 @@ export default function NextLessonCard({
 
     const lessons = data?.lessons || [];
     const allMaterie = lessons.map(
-        (lesson) => parseEventTitle(lesson.title).materia,
+        (lesson:any) => parseEventTitle(lesson.title).materia,
     );
     const materiaColorMap = getMateriaColorMap(allMaterie);
 
