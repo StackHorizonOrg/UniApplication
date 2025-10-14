@@ -1,4 +1,2 @@
-import { createTRPCReact } from "@trpc/react-query";
-import type { AppRouter } from "@/server/api/root";
+// File rimosso: non più necessario con fetch.
 
-export const api = createTRPCReact<AppRouter>();

@@ -1,17 +1,39 @@
 "use client";
 
-import { api } from "@/lib/api";
 import { parseOrarioData } from "@/lib/orario-utils";
 import { CalendarView } from "./components/CalendarView";
 import NextLessonCard from "./components/NextLessonCard";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  const {
-    data: orario,
-    isLoading,
-    error,
-  } = api.orario.getOrario.useQuery({ name: "test" });
+  const [orario, setOrario] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<any>(null);
+
+  useEffect(() => {
+    setIsLoading(true);
+    setError(null);
+    fetch("https://orario.zimaserver.it/api/public/orario/get-orario", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name: "test" }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Errore nella risposta API");
+        return await res.json();
+      })
+      .then((data) => {
+        setOrario(data);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        setError(err);
+        setIsLoading(false);
+      });
+  }, []);
 
   const schedule = orario ? parseOrarioData(orario) : [];
 
