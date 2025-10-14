@@ -16,14 +16,32 @@ type OrarioData = Array<{
   events: Array<{ time: string; title: string }>;
 }>;
 
-// Cache in-memory per i dati dell'orario
-let cachedData: { data: OrarioData; timestamp: number } | null = null;
-const CACHE_TTL = 1000 * 60 * 30; // 30 minuti
+// Cache in-memory per i dati dell'orario con durate diverse per giorno
+interface CacheItem {
+  data: OrarioData;
+  timestamp: number;
+  dayOffset: number;
+}
+const cache: Record<number, CacheItem> = {};
 
-const scrap = async (): Promise<OrarioData> => {
-  // Controlla se abbiamo dati in cache ancora validi
-  if (cachedData && Date.now() - cachedData.timestamp < CACHE_TTL) {
-    return cachedData.data;
+// Durate di cache differenziate per tipo di giorno
+function getCacheDuration(dayOffset: number): number {
+  if (dayOffset < 0) return 0; // Nessuna cache per i giorni precedenti
+  if (dayOffset === 0) return 30 * 60 * 1000; // 30 minuti per oggi
+  return 4 * 60 * 60 * 1000; // 4 ore per i giorni futuri
+}
+
+const scrap = async (dayOffset: number = 0): Promise<OrarioData> => {
+  const now = Date.now();
+  const cacheDuration = getCacheDuration(dayOffset);
+
+  // Controlla se abbiamo dati in cache ancora validi per il dayOffset richiesto
+  if (
+    cacheDuration > 0 &&
+    cache[dayOffset] &&
+    now - cache[dayOffset].timestamp < cacheDuration
+  ) {
+    return cache[dayOffset].data;
   }
 
   const browser = await puppeteer.launch({
@@ -82,9 +100,10 @@ const scrap = async (): Promise<OrarioData> => {
 
     // Salva in cache solo se abbiamo dati
     if (filteredContent.some((day) => day.events.length > 0)) {
-      cachedData = {
+      cache[dayOffset] = {
         data: filteredContent,
         timestamp: Date.now(),
+        dayOffset,
       };
     } else {
       console.warn("No events found on page! Not caching empty data.");
@@ -163,7 +182,8 @@ export const orarioRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input }) => {
-      const orarioData = await scrap();
+      // Passa dayOffset alla funzione scrap per utilizzare la cache appropriata
+      const orarioData = await scrap(input.dayOffset);
 
       const currentDate = getCurrentItalianDateTime();
       const targetDate = addDays(currentDate, input.dayOffset);
