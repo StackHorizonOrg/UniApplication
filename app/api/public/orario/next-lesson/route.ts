@@ -15,6 +15,13 @@ function getCacheKey(dayOffset: number): string {
     return `nextLesson_${dayOffset}`;
 }
 
+// Headers CORS globali
+const corsHeaders = {
+    "Access-Control-Allow-Origin": "*", // tutti i domini
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
 export async function GET(req: Request) {
     try {
         const url = new URL(req.url);
@@ -25,27 +32,56 @@ export async function GET(req: Request) {
         const now = Date.now();
 
         // Controlla se esiste una cache valida
-        if (cacheDuration > 0 &&
+        if (
+            cacheDuration > 0 &&
             cache[cacheKey] &&
-            cache[cacheKey].expires > now) {
-            return Response.json(cache[cacheKey].data);
+            cache[cacheKey].expires > now
+        ) {
+            return new Response(JSON.stringify(cache[cacheKey].data), {
+                headers: {
+                    "Content-Type": "application/json",
+                    ...corsHeaders,
+                },
+            });
         }
 
         // Se non c'è cache valida, recupera i dati freschi
         const caller = orarioRouter.createCaller({ headers: req.headers });
         const result = await caller.getNextLesson({ dayOffset });
 
-        // Memorizza in cache solo se necessario (non per i giorni precedenti)
+        // Memorizza in cache solo se necessario
         if (cacheDuration > 0) {
             cache[cacheKey] = {
                 data: result,
-                expires: now + cacheDuration
+                expires: now + cacheDuration,
             };
         }
 
-        return Response.json(result);
+        return new Response(JSON.stringify(result), {
+            headers: {
+                "Content-Type": "application/json",
+                ...corsHeaders,
+            },
+        });
     } catch (err: any) {
         console.error("Errore nella route pubblica:", err);
-        return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+        return new Response(
+            JSON.stringify({ error: err.message }),
+            {
+                status: 500,
+                headers: {
+                    "Content-Type": "application/json",
+                    ...corsHeaders,
+                },
+            }
+        );
     }
+}
+
+// Gestione delle richieste OPTIONS (preflight)
+export async function OPTIONS() {
+    return new Response(null, {
+        status: 204,
+        headers: corsHeaders,
+    });
 }
