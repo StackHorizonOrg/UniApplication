@@ -3,7 +3,7 @@ import { orarioRouter } from "@/server/api/routers/orario";
 // Headers CORS globali
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*", // tutti i domini
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
