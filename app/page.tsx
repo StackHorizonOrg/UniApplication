@@ -67,7 +67,7 @@ export default function Home() {
           Orario Insubria
         </h1>
         <section>
-          <NextLessonCard schedule={schedule} />
+          <NextLessonCard />
         </section>
 
         {/* Sezione Calendario */}
