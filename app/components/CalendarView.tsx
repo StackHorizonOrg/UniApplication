@@ -38,12 +38,17 @@ export function CalendarView({schedule}: CalendarViewProps) {
 
         const dayData = schedule.find((s) => s.day === dayOfWeek);
 
+        // Filtra le lezioni annullate (case-insensitive) prima di mostrare i dots / abilitare il click
+        const nonCancelledEvents = (dayData?.events || []).filter(
+            (ev) => !ev.time?.toUpperCase().includes("ANNULLATO"),
+        );
+
         return {
             day: dayOfWeek,
             dayOfMonth: dayOfMonth,
             date: currentDate,
-            events: dayData?.events || [],
-            hasEvents: (dayData?.events.length || 0) > 0,
+            events: nonCancelledEvents,
+            hasEvents: nonCancelledEvents.length > 0,
         };
     });
 
@@ -94,8 +99,7 @@ export function CalendarView({schedule}: CalendarViewProps) {
 
                         {weekDays.map((dayData) => {
                             const isToday = dayData.date.hasSame(today, "day");
-
-                            return (
+                             return (
                                 <button
                                     key={dayData.day}
                                     type="button"

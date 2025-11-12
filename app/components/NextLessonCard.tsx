@@ -9,7 +9,7 @@ import {
     MapPin,
     User,
 } from "lucide-react";
-import {useEffect, useState} from "react";
+import {useEffect, useState, useRef, useMemo} from "react";
 import {api} from "@/lib/api";
 import type {DaySchedule} from "@/lib/orario-utils";
 import {getMateriaColorMap, parseEventTitle} from "@/lib/orario-utils";
@@ -26,26 +26,41 @@ export default function NextLessonCard({
         dayOffset,
     });
 
-    // Calcola l'indice della lezione più vicina quando i dati cambiano
+    const lessons = data?.lessons || [];
+    // Mostriamo solo le lezioni non annullate (case-insensitive) e memoizziamo il risultato
+    const displayedLessons = useMemo(
+        () => lessons.filter((l) => !l.time?.toUpperCase().includes("ANNULLATO")),
+        [lessons],
+    );
+
+    // Tracking interazione utente: se l'utente ha navigato manualmente non sovrascriviamo l'indice
+    const userInteractedRef = useRef(false);
+
+    // Se il prop `schedule` cambia (es. l'utente sceglie una materia diversa)
+    // mostriamo la prima lezione della lista filtrata e consideriamo questa un'interazione utente
     useEffect(() => {
-        if (data?.lessons && data.lessons.length > 0 && dayOffset === 0) {
-            // Solo per oggi (dayOffset === 0) troviamo la lezione più vicina
+        if (displayedLessons.length > 0) {
+            userInteractedRef.current = true;
+            setCurrentLessonIndex(0);
+        }
+    }, [schedule]);
+
+    // Calcola l'indice della lezione più vicina quando i dati cambiano (usando displayedLessons)
+    useEffect(() => {
+        if (displayedLessons && displayedLessons.length > 0 && dayOffset === 0 && !userInteractedRef.current) {
             const now = new Date();
             const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
             let closestIndex = 0;
             let minDiff = Infinity;
 
-            data.lessons.forEach((lesson, index) => {
+            displayedLessons.forEach((lesson, index) => {
                 const timeRange = lesson.time.split(" - ");
                 if (timeRange.length === 2) {
                     const [hours, minutes] = timeRange[0].split(":").map(Number);
                     const startMinutes = hours * 60 + minutes;
 
-                    // Calcola la differenza assoluta
                     const diff = Math.abs(startMinutes - currentMinutes);
-
-                    // Se questa lezione è più vicina, aggiorna l'indice
                     if (diff < minDiff) {
                         minDiff = diff;
                         closestIndex = index;
@@ -54,17 +69,16 @@ export default function NextLessonCard({
             });
 
             setCurrentLessonIndex(closestIndex);
-        } else {
-            // Per gli altri giorni, inizia dalla prima lezione
-            setCurrentLessonIndex(0);
-        }
-    }, [data?.lessons, dayOffset]);
+         } else {
+             setCurrentLessonIndex(0);
+         }
+    }, [displayedLessons, dayOffset]);
+
     const getDate = (offset: number): string => {
         const today = new Date();
         today.setDate(today.getDate() + offset);
         return today.getDate() + "/" + (today.getMonth() + 1) + "/" + today.getFullYear();
     }
-    console.log("Data:", data);
     if (isLoading) {
         return (
             <div
@@ -145,8 +159,7 @@ export default function NextLessonCard({
         );
     }
 
-    const lessons = data?.lessons || [];
-    const allMaterie = lessons.map(
+    const allMaterie = displayedLessons.map(
         (lesson) => parseEventTitle(lesson.title).materia,
     );
     const materiaColorMap = getMateriaColorMap(allMaterie);
@@ -159,7 +172,7 @@ export default function NextLessonCard({
         return materiaColorMap[normalizedMateria] || "#666666";
     };
 
-    const hasLessons = data?.hasLessons && lessons.length > 0;
+    const hasLessons = data?.hasLessons && displayedLessons.length > 0;
 
     if (!hasLessons) {
         return (
@@ -217,7 +230,9 @@ export default function NextLessonCard({
         );
     }
 
-    const currentLesson = lessons[currentLessonIndex];
+    // Assicuriamoci che l'indice visualizzato sia valido rispetto alla lista filtrata
+    const displayIndex = Math.max(0, Math.min(currentLessonIndex, displayedLessons.length - 1));
+    const currentLesson = displayedLessons[displayIndex];
     const parsedLesson = parseEventTitle(currentLesson.title);
     const dotColor = getMateriaColorDot(parsedLesson.materia);
 
@@ -242,6 +257,8 @@ export default function NextLessonCard({
                     <div className="flex items-center gap-1">
                         <button
                             onClick={() => {
+                                // cambio giorno: reset index e consenti al sistema di ricalcolare
+                                userInteractedRef.current = false;
                                 setDayOffset(Math.max(dayOffset - 1, 0));
                                 setCurrentLessonIndex(0);
                             }}
@@ -256,6 +273,7 @@ export default function NextLessonCard({
             </span>
                         <button
                             onClick={() => {
+                                userInteractedRef.current = false;
                                 setDayOffset(dayOffset + 1);
                                 setCurrentLessonIndex(0);
                             }}
@@ -290,7 +308,7 @@ export default function NextLessonCard({
                     )}
                 </div>
 
-                {/* Main content area */}
+
                 <div className="flex-1 flex flex-col justify-center">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
@@ -337,34 +355,35 @@ export default function NextLessonCard({
                         </div>
                     </div>
                 </div>
-
                 {/* Navigation area - always reserved space */}
                 <div
                     className="h-10 pt-4 border-t border-gray-200 dark:border-gray-900 flex items-center justify-between">
           <span className="text-xs text-gray-900 dark:text-white font-mono">
-            {lessons.length > 1
-                ? `${currentLessonIndex + 1} / ${lessons.length}`
+            {displayedLessons.length > 1
+                ? `${displayIndex + 1} / ${displayedLessons.length}`
                 : "1 / 1"}
           </span>
                     <div className="flex items-center gap-1">
                         <button
-                            onClick={() =>
-                                setCurrentLessonIndex(Math.max(currentLessonIndex - 1, 0))
-                            }
-                            disabled={currentLessonIndex === 0 || lessons.length <= 1}
+                            onClick={() => {
+                                userInteractedRef.current = true;
+                                setCurrentLessonIndex(Math.max(currentLessonIndex - 1, 0));
+                            }}
+                            disabled={displayIndex === 0 || displayedLessons.length <= 1}
                             className="w-6 h-6 border border-gray-900 dark:border-white rounded-sm flex items-center justify-center hover:border-gray-900 dark:hover:border-white disabled:opacity-30 transition-colors"
                             type="button"
                         >
                             <ChevronLeft className="w-2.5 h-2.5 text-gray-900 dark:text-white"/>
                         </button>
                         <button
-                            onClick={() =>
+                            onClick={() => {
+                                userInteractedRef.current = true;
                                 setCurrentLessonIndex(
-                                    Math.min(currentLessonIndex + 1, lessons.length - 1),
-                                )
-                            }
+                                    Math.min(currentLessonIndex + 1, displayedLessons.length - 1),
+                                );
+                            }}
                             disabled={
-                                currentLessonIndex === lessons.length - 1 || lessons.length <= 1
+                                displayIndex === displayedLessons.length - 1 || displayedLessons.length <= 1
                             }
                             className="w-6 h-6 border border-gray-900 dark:border-white rounded-sm flex items-center justify-center hover:border-gray-900 dark:hover:border-white disabled:opacity-30 transition-colors"
                             type="button"

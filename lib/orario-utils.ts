@@ -106,3 +106,4 @@ export function getMateriaColorMap(materie: string[]): Record<string, string> {
   });
   return colorMap;
 }
+
