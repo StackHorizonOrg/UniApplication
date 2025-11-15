@@ -169,12 +169,13 @@ export function CalendarDayDialog({
                                                     <span
                                                         className={`text-xs px-2 py-0.5 rounded-full font-mono flex-shrink-0 ${
                                                             event.tipo === "Laboratorio"
-                                                                ? "bg-orange-500 bg-opacity-40 text-orange-800 dark:text-orange-300"
-                                                                : "bg-blue-500 bg-opacity-40 text-blue-800 dark:text-blue-300"
+                                                                ? "bg-orange-200 text-orange-900 dark:bg-orange-700 dark:text-white"
+                                                                : "bg-blue-200 text-blue-900 dark:bg-blue-700 dark:text-white"
                                                         }`}
                                                     >
-                            {event.tipo}
-                          </span>
+    {event.tipo}
+</span>
+
                                                 </div>
                                                 <div className="text-gray-600 dark:text-gray-400 space-y-1.5 flex-1">
                                                     <div className="flex items-center gap-2">
