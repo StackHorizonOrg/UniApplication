@@ -1,7 +1,14 @@
 "use client";
 
-import { ChevronRight, Sparkles, Zap, Globe, MessageSquare, Smartphone } from "lucide-react";
-import { useState, useEffect } from "react";
+import {
+  ChevronRight,
+  Globe,
+  MessageSquare,
+  Smartphone,
+  Sparkles,
+  Zap,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface WelcomeDialogProps {
   isOpen: boolean;
@@ -189,7 +196,3 @@ export function WelcomeDialog({ isOpen, onComplete }: WelcomeDialogProps) {
     </div>
   );
 }
-
-
-
-

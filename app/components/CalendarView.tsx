@@ -120,7 +120,9 @@ export function CalendarView({
       const todayDayOfWeek = getDayOfWeek(today);
       const todayStartOfWeek = today.minus({ days: todayDayOfWeek });
 
-      const diffInDays = Math.floor(selectedStartOfWeek.diff(todayStartOfWeek, "days").days);
+      const diffInDays = Math.floor(
+        selectedStartOfWeek.diff(todayStartOfWeek, "days").days,
+      );
       onSetOffset(diffInDays);
       setIsCalendarOpen(false);
     }

@@ -14,6 +14,7 @@ import { WelcomeDialog } from "./components/WelcomeDialog";
 export default function Home() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [calendarId] = useLocalStorage<string>("calendarId", "");
+  const [courseName] = useLocalStorage<string>("courseName", "");
   const [hasSeenWelcome, setHasSeenWelcome] = useLocalStorage<boolean>(
     "hasSeenWelcomeV2",
     false,
@@ -143,9 +144,16 @@ export default function Home() {
     <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-white flex flex-col">
       <main className="w-full px-4 py-4 space-y-6 flex-1">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-4xl font-semibold text-gray-900 dark:text-white font-serif">
-            Orario Insubria
-          </h1>
+          <div>
+            <h1 className="text-4xl font-semibold text-gray-900 dark:text-white font-serif">
+              Orario Insubria
+            </h1>
+            {courseName && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {courseName}
+              </p>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => setIsSettingsOpen(true)}

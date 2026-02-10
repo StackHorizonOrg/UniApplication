@@ -59,3 +59,19 @@ export function useLocalStorage<T>(
 
   return [storedValue, setValue];
 }
+
+function generateUserId(): string {
+  return `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+export function useUserId(): string {
+  const [userId, setUserId] = useLocalStorage<string>("userId", "");
+
+  useEffect(() => {
+    if (!userId) {
+      setUserId(generateUserId());
+    }
+  }, [userId, setUserId]);
+
+  return userId;
+}
