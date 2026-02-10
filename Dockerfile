@@ -25,6 +25,10 @@ COPY app ./app
 COPY components ./components
 COPY lib ./lib
 COPY server ./server
+COPY data ./data
+
+# Copia il file .env.local per le variabili d'ambiente
+COPY .env.local .env.local
 
 # Build dell'applicazione
 RUN pnpm run build
