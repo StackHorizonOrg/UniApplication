@@ -31,23 +31,16 @@ export function parseEventTitle(title: string): {
   docente: string;
   tipo: string;
 } {
-  // Estrai la materia (tutto prima di "Aula")
+  // Fallback parsing if backend doesn't provide fields
   const aulaMatch = title.match(/^(.+?)Aula/);
   const materia = aulaMatch ? aulaMatch[1].trim() : title;
-
-  // Estrai l'aula completa (incluso eventuali descrizioni tra parentesi)
-  // Cattura tutto tra "Aula" e il docente (che inizia con "Iniziale. COGNOME")
   const aulaFullMatch = title.match(/Aula\s+(.+?)(?=\s+[A-Z]\.\s+[A-Z]+)/);
   const aula = aulaFullMatch ? `Aula ${aulaFullMatch[1].trim()}` : "";
-
-  // Estrai il docente: cerca il pattern [Iniziale]. [COGNOME] che appare dopo l'aula
-  // Il docente è nel formato "X. COGNOME" dove X è l'iniziale del nome
   const docenteMatch = title.match(
     /\s([A-Z]\.\s+[A-Z][A-Z\s]+?)(?=Orario|Lezione|Laboratorio|SEDI|$)/,
   );
   let docente = docenteMatch ? docenteMatch[1].trim() : "";
 
-  // Rimuovi eventuali "L" finali aggiunte erroneamente
   if (docente?.endsWith("L")) {
     docente = docente.slice(0, -1).trim();
   }
@@ -58,11 +51,31 @@ export function parseEventTitle(title: string): {
 }
 
 export function parseOrarioData(
-  rawData: { day: number; events: { time: string; title: string }[] }[],
+  rawData: { 
+    day: number; 
+    events: { 
+      time: string; 
+      title: string; 
+      location?: string; 
+      professor?: string 
+    }[] 
+  }[],
 ): DaySchedule[] {
   return rawData.map((day) => ({
     day: day.day,
     events: day.events.map((event) => {
+      // Use backend provided fields if available
+      if (event.location !== undefined || event.professor !== undefined) {
+        return {
+            time: event.time,
+            materia: event.title,
+            aula: event.location || "",
+            docente: event.professor || "",
+            tipo: event.title.includes("Laboratorio") ? "Laboratorio" : "Lezione"
+        };
+      }
+      
+      // Fallback to legacy parsing
       const parsed = parseEventTitle(event.title);
       return {
         time: event.time,
@@ -106,4 +119,3 @@ export function getMateriaColorMap(materie: string[]): Record<string, string> {
   });
   return colorMap;
 }
-

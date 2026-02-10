@@ -1,18 +1,23 @@
 "use client";
 
 import {
-    Calendar,
+    Calendar as CalendarIcon,
     ChevronLeft,
     ChevronRight,
     Clock,
     Dot,
     MapPin,
     User,
+    RotateCcw,
 } from "lucide-react";
 import {useEffect, useState, useRef, useMemo} from "react";
 import {api} from "@/lib/api";
 import type {DaySchedule} from "@/lib/orario-utils";
 import {getMateriaColorMap, parseEventTitle} from "@/lib/orario-utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { it } from "date-fns/locale";
 
 export default function NextLessonCard({
                                            schedule,
@@ -21,6 +26,7 @@ export default function NextLessonCard({
 }) {
     const [dayOffset, setDayOffset] = useState(0);
     const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
     const {data, isLoading, error} = api.orario.getNextLesson.useQuery({
         dayOffset,
@@ -79,6 +85,22 @@ export default function NextLessonCard({
         today.setDate(today.getDate() + offset);
         return today.getDate() + "/" + (today.getMonth() + 1) + "/" + today.getFullYear();
     }
+
+    const handleDateSelect = (date: Date | undefined) => {
+        if (date) {
+            const selected = new Date(date);
+            selected.setHours(0, 0, 0, 0);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const diffInTime = selected.getTime() - today.getTime();
+            const diffInDays = Math.round(diffInTime / (1000 * 3600 * 24));
+            setDayOffset(Math.max(0, diffInDays));
+            setIsCalendarOpen(false);
+            userInteractedRef.current = false;
+            setCurrentLessonIndex(0);
+        }
+    };
+
     if (isLoading) {
         return (
             <div
@@ -174,6 +196,9 @@ export default function NextLessonCard({
 
     const hasLessons = data?.hasLessons && displayedLessons.length > 0;
 
+    const todayDate = new Date();
+    todayDate.setDate(todayDate.getDate() + dayOffset);
+
     if (!hasLessons) {
         return (
             <div
@@ -181,26 +206,70 @@ export default function NextLessonCard({
                 <div className="p-4 border-b border-gray-200 dark:border-gray-900">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-gray-900 dark:text-white"/>
+                            <CalendarIcon className="w-4 h-4 text-gray-900 dark:text-white"/>
                             <span className="text-sm text-gray-900 dark:text-white font-mono">
                 {data?.dayName || "Giorno"}
               </span>
                         </div>
                         <div className="flex items-center gap-1">
+                            {dayOffset !== 0 && (
+                                <button
+                                    onClick={() => {
+                                        setDayOffset(0);
+                                        userInteractedRef.current = false;
+                                        setCurrentLessonIndex(0);
+                                    }}
+                                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors mr-1"
+                                    title="Torna a oggi"
+                                    type="button"
+                                >
+                                    <RotateCcw className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                                </button>
+                            )}
+
                             <button
-                                onClick={() => setDayOffset(Math.max(dayOffset - 1, 0))}
+                                onClick={() => {
+                                    userInteractedRef.current = false;
+                                    setDayOffset(Math.max(dayOffset - 1, 0));
+                                    setCurrentLessonIndex(0);
+                                }}
                                 disabled={dayOffset === 0}
-                                className="w-7 h-7 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:border-gray-900 dark:hover:border-white disabled:opacity-30 transition-colors"
+                                className="w-7 h-7 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 disabled:opacity-30 transition-colors"
                                 type="button"
                             >
                                 <ChevronLeft className="w-3 h-3 text-gray-900 dark:text-white"/>
                             </button>
-                            <span className="text-xs text-gray-900 dark:text-white font-mono px-2 min-w-12 text-center">
-                {getDate(dayOffset)}
-              </span>
+                            
+                            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                                <PopoverTrigger asChild>
+                                    <button 
+                                        className={cn(
+                                            "text-xs text-gray-900 dark:text-white font-mono px-2 min-w-12 text-center hover:opacity-70 transition-opacity",
+                                            isCalendarOpen && "opacity-50"
+                                        )}
+                                    >
+                                        {getDate(dayOffset)}
+                                    </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-none shadow-none" align="center">
+                                    <Calendar
+                                        mode="single"
+                                        selected={todayDate}
+                                        onSelect={handleDateSelect}
+                                        initialFocus
+                                        locale={it}
+                                        className="font-mono"
+                                    />
+                                </PopoverContent>
+                            </Popover>
+
                             <button
-                                onClick={() => setDayOffset(dayOffset + 1)}
-                                className="w-7 h-7 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:border-gray-900 dark:hover:border-white disabled:opacity-30 transition-colors"
+                                onClick={() => {
+                                    userInteractedRef.current = false;
+                                    setDayOffset(dayOffset + 1);
+                                    setCurrentLessonIndex(0);
+                                }}
+                                className="w-7 h-7 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 disabled:opacity-30 transition-colors"
                                 type="button"
                             >
                                 <ChevronRight className="w-3 h-3 text-gray-900 dark:text-white"/>
@@ -249,12 +318,26 @@ export default function NextLessonCard({
             <div className="p-4 border-b border-gray-200 dark:border-gray-900">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-gray-900 dark:text-white"/>
+                        <CalendarIcon className="w-4 h-4 text-gray-900 dark:text-white"/>
                         <span className="text-sm text-gray-900 dark:text-white font-mono">
               {data.dayName}
             </span>
                     </div>
                     <div className="flex items-center gap-1">
+                        {dayOffset !== 0 && (
+                            <button
+                                onClick={() => {
+                                    setDayOffset(0);
+                                    userInteractedRef.current = false;
+                                    setCurrentLessonIndex(0);
+                                }}
+                                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors mr-1"
+                                title="Torna a oggi"
+                                type="button"
+                            >
+                                <RotateCcw className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                            </button>
+                        )}
                         <button
                             onClick={() => {
                                 // cambio giorno: reset index e consenti al sistema di ricalcolare
@@ -263,21 +346,42 @@ export default function NextLessonCard({
                                 setCurrentLessonIndex(0);
                             }}
                             disabled={dayOffset === 0}
-                            className="w-7 h-7 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:border-gray-900 dark:hover:border-white disabled:opacity-30 transition-colors"
+                            className="w-7 h-7 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 disabled:opacity-30 transition-colors"
                             type="button"
                         >
                             <ChevronLeft className="w-3 h-3 text-gray-900 dark:text-white"/>
                         </button>
-                        <span className="text-xs text-gray-900 dark:text-white font-mono px-2 min-w-12 text-center">
-              {getDate(dayOffset)}
-            </span>
+                        
+                        <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                            <PopoverTrigger asChild>
+                                <button 
+                                    className={cn(
+                                        "text-xs text-gray-900 dark:text-white font-mono px-2 min-w-12 text-center hover:opacity-70 transition-opacity",
+                                        isCalendarOpen && "opacity-50"
+                                    )}
+                                >
+                                    {getDate(dayOffset)}
+                                </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-none shadow-none" align="center">
+                                <Calendar
+                                    mode="single"
+                                    selected={todayDate}
+                                    onSelect={handleDateSelect}
+                                    initialFocus
+                                    locale={it}
+                                    className="font-mono"
+                                />
+                            </PopoverContent>
+                        </Popover>
+
                         <button
                             onClick={() => {
                                 userInteractedRef.current = false;
                                 setDayOffset(dayOffset + 1);
                                 setCurrentLessonIndex(0);
                             }}
-                            className="w-7 h-7 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:border-gray-900 dark:hover:border-white disabled:opacity-30 transition-colors"
+                            className="w-7 h-7 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 disabled:opacity-30 transition-colors"
                             type="button"
                         >
                             <ChevronRight className="w-3 h-3 text-gray-900 dark:text-white"/>

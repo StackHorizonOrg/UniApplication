@@ -1,183 +1,311 @@
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
-import {useState} from "react";
-import {CalendarDayDialog} from "@/app/components/CalendarDayDialog";
-import {getCurrentItalianDateTime, getDayOfWeek} from "@/lib/date-utils";
-import type {DaySchedule, ParsedEvent} from "@/lib/orario-utils";
-import {getMateriaColorMap} from "@/lib/orario-utils";
+import { useState } from "react";
+import { CalendarDayDialog } from "@/app/components/CalendarDayDialog";
+import { getCurrentItalianDateTime, getDayOfWeek, addDays } from "@/lib/date-utils";
+import type { DaySchedule, ParsedEvent } from "@/lib/orario-utils";
+import { getMateriaColorMap } from "@/lib/orario-utils";
+import { DateTime } from "luxon";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { it } from "date-fns/locale";
+import { ChevronLeft, ChevronRight, Eye, EyeOff, Filter } from "lucide-react";
+import { useLocalStorage } from "@/lib/hooks";
 
-// Configura dayjs con i plugin per timezone
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 interface CalendarViewProps {
-    schedule: DaySchedule[];
+  schedule: DaySchedule[];
+  weekOffset: number;
+  onNextWeek: () => void;
+  onPrevWeek: () => void;
+  onReset: () => void;
+  onSetOffset: (offset: number) => void;
 }
 
-export function CalendarView({schedule}: CalendarViewProps) {
-    const [selectedDay, setSelectedDay] = useState<DaySchedule | null>(null);
+export function CalendarView({ 
+  schedule, 
+  weekOffset, 
+  onNextWeek, 
+  onPrevWeek, 
+  onReset,
+  onSetOffset
+}: CalendarViewProps) {
+  const [selectedDay, setSelectedDay] = useState<DaySchedule | null>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [hiddenSubjects, setHiddenSubjects] = useLocalStorage<string[]>("hiddenSubjects", []);
 
-    const allMaterie = schedule.flatMap((day) =>
-        day.events.map((ev) => ev.materia),
+  const allMaterie = schedule.flatMap((day) =>
+    day.events.map((ev) => ev.materia),
+  );
+  const materiaColorMap = getMateriaColorMap(allMaterie);
+
+  const toggleSubject = (materia: string) => {
+    setHiddenSubjects((prev) => 
+      prev.includes(materia) 
+        ? prev.filter((s) => s !== materia)
+        : [...prev, materia]
     );
-    const materiaColorMap = getMateriaColorMap(allMaterie);
+  };
 
-    // Ottieni la data corrente in fuso orario italiano
-    const today = getCurrentItalianDateTime();
-    const todayDayOfWeek = getDayOfWeek(today);
+  const today = getCurrentItalianDateTime();
+  const baseDate = addDays(today, weekOffset);
+  
+  const currentDayOfWeek = getDayOfWeek(baseDate);
+  const startOfWeek = baseDate.minus({ days: currentDayOfWeek });
+  const endOfWeek = startOfWeek.plus({ days: 6 });
 
-    // Calcola il primo giorno della settimana (Lunedì)
-    const startOfWeek = today.minus({days: todayDayOfWeek});
+  // Formatta il range della settimana in italiano
+  const startDay = startOfWeek.toFormat("d");
+  const endDay = endOfWeek.toFormat("d");
+  const monthYear = endOfWeek.setLocale('it').toFormat("MMMM yyyy");
+  const weekRangeDisplay = `${startDay} - ${endDay} ${monthYear}`;
 
-    // Crea l'array dei giorni della settimana con i numeri effettivi del mese
-    const weekDays = Array.from({length: 7}, (_, index) => {
-        const currentDate = startOfWeek.plus({days: index});
-        const dayOfMonth = currentDate.day; // Giorno del mese (1-31)
-        const dayOfWeek = getDayOfWeek(currentDate);
+  const weekDays = Array.from({ length: 7 }, (_, index) => {
+    const currentDate = startOfWeek.plus({ days: index });
+    const dayOfMonth = currentDate.day;
+    const dayOfWeek = getDayOfWeek(currentDate);
 
-        const dayData = schedule.find((s) => s.day === dayOfWeek);
+    const dayData = schedule.find((s) => s.day === dayOfWeek);
 
-        // Filtra le lezioni annullate (case-insensitive) prima di mostrare i dots / abilitare il click
-        const nonCancelledEvents = (dayData?.events || []).filter(
-            (ev) => !ev.time?.toUpperCase().includes("ANNULLATO"),
-        );
+    const nonCancelledEvents = (dayData?.events || []).filter(
+      (ev) => !ev.time?.toUpperCase().includes("ANNULLATO") && !hiddenSubjects.includes(ev.materia),
+    );
 
-        return {
-            day: dayOfWeek,
-            dayOfMonth: dayOfMonth,
-            date: currentDate,
-            events: nonCancelledEvents,
-            hasEvents: nonCancelledEvents.length > 0,
-        };
-    });
-
-    const getEventDots = (events: ParsedEvent[]) => {
-        const materieSet = new Set(events.map((event) => event.materia));
-        return Array.from(materieSet).slice(0, 3); // Max 3 dots per giorno
+    return {
+      day: dayOfWeek,
+      dayOfMonth: dayOfMonth,
+      date: currentDate,
+      events: nonCancelledEvents,
+      hasEvents: nonCancelledEvents.length > 0,
     };
+  });
 
-    const getMateriaColor = (materia: string) => {
-        const normalizedMateria = materia
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toUpperCase();
-        return materiaColorMap[normalizedMateria] || "#666666";
-    };
+  const getEventDots = (events: ParsedEvent[]) => {
+    const materieSet = new Set(events.map((event) => event.materia));
+    return Array.from(materieSet).slice(0, 3);
+  };
 
-    const weekDayHeaders = [
-        {label: "L", name: "Lunedì"},
-        {label: "M", name: "Martedì"},
-        {label: "M", name: "Mercoledì"},
-        {label: "G", name: "Giovedì"},
-        {label: "V", name: "Venerdì"},
-        {label: "S", name: "Sabato"},
-        {label: "D", name: "Domenica"},
-    ];
+  const getMateriaColor = (materia: string) => {
+    const normalizedMateria = materia
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toUpperCase();
+    return materiaColorMap[normalizedMateria] || "#666666";
+  };
 
-    return (
-        <>
-            <div className="w-full max-w-md mx-auto bg-white dark:bg-black text-gray-900 dark:text-white">
-                <div className="p-6 text-center border-b border-gray-200 dark:border-gray-800">
-                    <h1 className="text-xl font-light tracking-wide mb-1 font-serif">
-                        Orario
-                    </h1>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {today.toFormat("d MMMM yyyy")}
-                    </div>
-                </div>
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+        const selected = DateTime.fromJSDate(date).setZone("Europe/Rome");
+        const diffInDays = Math.floor(selected.diff(today, 'days').days);
+        onSetOffset(diffInDays);
+        setIsCalendarOpen(false);
+    }
+  };
 
-                <div className="p-4">
-                    <div className="grid grid-cols-7 gap-1">
-                        {weekDayHeaders.map((day) => (
-                            <div key={day.name} className="text-center py-3">
-                <span className="text-xs font-mono text-gray-900 dark:text-white">
+  const weekDayHeaders = [
+    { label: "L", name: "Lunedì" },
+    { label: "M", name: "Martedì" },
+    { label: "M", name: "Mercoledì" },
+    { label: "G", name: "Giovedì" },
+    { label: "V", name: "Venerdì" },
+    { label: "S", name: "Sabato" },
+    { label: "D", name: "Domenica" },
+  ];
+
+  return (
+    <>
+      <div className="w-full max-w-md mx-auto bg-white dark:bg-black text-gray-900 dark:text-white border-none">
+        
+        {/* Header with Navigation and Shadcn DatePicker */}
+        <div className="p-4 flex items-center justify-between border-b border-dashed border-gray-300 dark:border-gray-800">
+          <button 
+            onClick={onPrevWeek}
+            className="w-7 h-7 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors disabled:opacity-30"
+          >
+            <ChevronLeft className="w-4 h-4 text-gray-900 dark:text-white" />
+          </button>
+
+          <div className="text-center relative flex flex-col items-center">
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <button 
+                  className={cn(
+                    "text-sm font-mono uppercase tracking-widest hover:opacity-70 transition-opacity border-b border-transparent hover:border-black dark:hover:border-white pb-0.5",
+                    isCalendarOpen && "opacity-50"
+                  )}
+                >
+                  {weekRangeDisplay}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-none shadow-none" align="center">
+                <Calendar
+                  mode="single"
+                  selected={baseDate.toJSDate()}
+                  onSelect={handleDateSelect}
+                  initialFocus
+                  locale={it}
+                  className="font-mono"
+                />
+              </PopoverContent>
+            </Popover>
+
+            {weekOffset !== 0 && (
+              <button 
+                onClick={onReset}
+                className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-mono mt-1 border-b border-gray-300 dark:border-gray-700 hover:text-black dark:hover:text-white transition-colors"
+              >
+                Torna a oggi
+              </button>
+            )}
+          </div>
+
+          <button 
+            onClick={onNextWeek}
+            className="w-7 h-7 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors disabled:opacity-30"
+          >
+            <ChevronRight className="w-4 h-4 text-gray-900 dark:text-white" />
+          </button>
+        </div>
+
+        <div className="p-4">
+          <div className="grid grid-cols-7 gap-1">
+            {weekDayHeaders.map((day) => (
+              <div key={day.name} className="text-center py-3">
+                <span className="text-xs font-mono text-gray-400 dark:text-gray-600">
                   {day.label}
                 </span>
-                            </div>
-                        ))}
+              </div>
+            ))}
 
-                        {weekDays.map((dayData) => {
-                            const isToday = dayData.date.hasSame(today, "day");
-                             return (
-                                <button
-                                    key={dayData.day}
-                                    type="button"
-                                    onClick={() =>
-                                        dayData.hasEvents &&
-                                        setSelectedDay({day: dayData.day, events: dayData.events})
-                                    }
-                                    className={`
-                    relative aspect-square flex flex-col items-center justify-center rounded-lg
+            {weekDays.map((dayData) => {
+              const isToday = dayData.date.hasSame(today, "day");
+              return (
+                <button
+                  key={dayData.day}
+                  type="button"
+                  onClick={() =>
+                    dayData.hasEvents &&
+                    setSelectedDay({ day: dayData.day, events: dayData.events })
+                  }
+                  className={`
+                    relative aspect-square flex flex-col items-center justify-center rounded-sm
                     transition-all duration-200 active:scale-95
                     ${
-                                        dayData.hasEvents
-                                            ? "bg-gray-100 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-800 cursor-pointer"
-                                            : "cursor-default"
-                                    }
-                    ${isToday ? "ring-1 ring-gray-400 dark:ring-white ring-opacity-50 dark:ring-opacity-30" : ""}
+                      dayData.hasEvents
+                        ? "bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+                        : "cursor-default"
+                    }
+                    ${isToday ? "border border-black dark:border-white" : ""}
                   `}
-                                >
+                >
                   <span
-                      className={`text-sm font-mono mb-1 ${
-                          dayData.hasEvents
-                              ? "text-gray-900 dark:text-white"
-                              : "text-gray-300 dark:text-gray-600"
-                      }`}
+                    className={`text-sm font-mono mb-1 ${
+                      dayData.hasEvents
+                        ? "text-gray-900 dark:text-white"
+                        : "text-gray-300 dark:text-gray-700"
+                    }`}
                   >
                     {dayData.dayOfMonth}
                   </span>
 
-                                    {dayData.hasEvents && (
-                                        <div className="flex gap-0.5 justify-center">
-                                            {getEventDots(dayData.events).map((materia) => (
-                                                <div
-                                                    key={materia}
-                                                    className="w-1.5 h-1.5 rounded-full"
-                                                    style={{backgroundColor: getMateriaColor(materia)}}
-                                                />
-                                            ))}
-                                            {dayData.events.length > 3 && (
-                                                <div className="w-1.5 h-1.5 rounded-full bg-gray-400"/>
-                                            )}
-                                        </div>
-                                    )}
-                                </button>
-                            );
-                        })}
+                  {dayData.hasEvents && (
+                    <div className="flex gap-0.5 justify-center">
+                      {getEventDots(dayData.events).map((materia) => (
+                        <div
+                          key={materia}
+                          className="w-1 h-1 rounded-full"
+                          style={{ backgroundColor: getMateriaColor(materia) }}
+                        />
+                      ))}
                     </div>
-                </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-                <div className="px-4 pb-6">
-                    <div className="space-y-2">
-                        <h3 className="text-xs font-mono text-gray-900 dark:text-white mb-3">
-                            Materie
-                        </h3>
-                        {Array.from(
-                            new Set(schedule.flatMap((s) => s.events.map((e) => e.materia))),
-                        ).map((materia) => (
-                            <div key={materia} className="flex items-center gap-2">
-                                <div
-                                    className="w-2 h-2 rounded-full flex-shrink-0"
-                                    style={{backgroundColor: getMateriaColor(materia)}}
-                                />
-                                <span className="text-xs text-gray-900 dark:text-white font-mono truncate">
-                  {materia.toLowerCase()}
-                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+        <div className="px-4 pb-6">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between border-b border-dashed border-gray-200 dark:border-gray-800 pb-2">
+               <h3 className="text-[10px] font-mono text-gray-400 dark:text-gray-600 uppercase tracking-widest flex items-center gap-2">
+                 <Filter className="w-3 h-3" />
+                 Filtra Materie
+               </h3>
+               {hiddenSubjects.length > 0 && (
+                   <span className="text-[10px] text-gray-400 dark:text-gray-600 font-mono">
+                       {hiddenSubjects.length} nascoste
+                   </span>
+               )}
             </div>
+            
+            <div className="grid grid-cols-1 gap-2">
+                {Array.from(
+                  new Set(schedule.flatMap((s) => s.events.map((e) => e.materia))),
+                ).sort().map((materia) => {
+                  const isHidden = hiddenSubjects.includes(materia);
+                  const color = getMateriaColor(materia);
+                  
+                  return (
+                      <button 
+                        key={materia} 
+                        onClick={() => toggleSubject(materia)}
+                        className={cn(
+                            "flex items-center gap-3 w-full text-left group py-1 px-1 rounded-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-900",
+                            isHidden && "opacity-50 grayscale"
+                        )}
+                      >
+                        <div className="relative">
+                            <div
+                              className={cn(
+                                  "w-3 h-3 rounded-full flex-shrink-0 transition-transform",
+                                  isHidden && "scale-75"
+                              )}
+                              style={{ backgroundColor: color }}
+                            />
+                            {isHidden && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-full h-px bg-white/80 -rotate-45" />
+                                </div>
+                            )}
+                        </div>
+                        
+                        <span className={cn(
+                            "text-xs font-mono truncate uppercase tracking-tight flex-1 transition-colors",
+                            isHidden 
+                                ? "text-gray-400 dark:text-gray-600 line-through decoration-gray-400/50" 
+                                : "text-gray-800 dark:text-gray-200 group-hover:text-black dark:group-hover:text-white"
+                        )}>
+                          {materia.toLowerCase()}
+                        </span>
 
-            {selectedDay && (
-                <CalendarDayDialog
-                    day={selectedDay}
-                    isOpen={!!selectedDay}
-                    onClose={() => setSelectedDay(null)}
-                    materiaColorMap={materiaColorMap}
-                />
-            )}
-        </>
-    );
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            {isHidden ? (
+                                <EyeOff className="w-3 h-3 text-gray-400" />
+                            ) : (
+                                <Eye className="w-3 h-3 text-gray-400" />
+                            )}
+                        </div>
+                      </button>
+                  );
+                })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {selectedDay && (
+        <CalendarDayDialog
+          day={selectedDay}
+          isOpen={!!selectedDay}
+          onClose={() => setSelectedDay(null)}
+          materiaColorMap={materiaColorMap}
+        />
+      )}
+    </>
+  );
 }

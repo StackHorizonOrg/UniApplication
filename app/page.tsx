@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { api } from "@/lib/api";
 import { parseOrarioData } from "@/lib/orario-utils";
 import { CalendarView } from "./components/CalendarView";
@@ -7,15 +8,27 @@ import NextLessonCard from "./components/NextLessonCard";
 import { ThemeToggle } from "./components/ThemeToggle";
 
 export default function Home() {
+  const [weekOffset, setWeekOffset] = useState(0);
+
   const {
     data: orario,
     isLoading,
     error,
-  } = api.orario.getOrario.useQuery({ name: "test" });
+  } = api.orario.getOrario.useQuery({ 
+    name: "INFORMATICA",
+    location: "Varese",
+    dayOffset: weekOffset 
+  }, {
+    keepPreviousData: true // Keep showing old data while fetching new week
+  });
 
   const schedule = orario ? parseOrarioData(orario) : [];
 
-  if (isLoading) {
+  const handleNextWeek = () => setWeekOffset(prev => prev + 7);
+  const handlePrevWeek = () => setWeekOffset(prev => prev - 7);
+  const handleReset = () => setWeekOffset(0);
+
+  if (isLoading && !orario) {
     return (
       <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
         <div className="text-center">
@@ -61,18 +74,38 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-white flex flex-col">
-      {/* Contenuto principale */}
       <main className="w-full px-4 py-4 space-y-6 flex-1">
         <h1 className="text-4xl font-semibold mb-4 text-gray-900 dark:text-white font-serif">
           Orario Insubria
         </h1>
+        
+        {/* Only show Next Lesson if we are looking at the current week/future, 
+            or just always show it? Usually Next Lesson is relative to "NOW". 
+            But if I navigate to next year, "Next Lesson" card might seem redundant 
+            or should it stick to "Real Time Next Lesson"? 
+            Let's keep it real-time (unaffected by navigation) for now. 
+            Wait, I need to check if NextLessonCard uses 'schedule' prop.
+            Yes it does. So if I navigate to next week, NextLessonCard will 
+            try to find the next lesson in *that* week.
+            That might be what the user wants: "What is the first lesson of that week?"
+            Or they might want "What is my next lesson right now?".
+            Usually "Next Lesson" implies relative to wall-clock time. 
+            If I pass next week's schedule, it might show Monday's lesson. 
+            That's acceptable behavior.
+        */}
         <section>
           <NextLessonCard schedule={schedule} />
         </section>
 
-        {/* Sezione Calendario */}
         <section>
-          <CalendarView schedule={schedule} />
+          <CalendarView 
+            schedule={schedule} 
+            weekOffset={weekOffset}
+            onNextWeek={handleNextWeek}
+            onPrevWeek={handlePrevWeek}
+            onReset={handleReset}
+            onSetOffset={setWeekOffset}
+          />
         </section>
       </main>
 

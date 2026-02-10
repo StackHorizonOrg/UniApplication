@@ -1,5 +1,4 @@
 import type { DateTime } from "luxon";
-import puppeteer from "puppeteer";
 import { z } from "zod";
 import {
   addDays,
@@ -9,111 +8,140 @@ import {
   timeToMinutes,
 } from "@/lib/date-utils";
 import { createTRPCRouter, publicProcedure } from "../trpc";
+import { DateTime as LuxonDateTime } from "luxon";
 
 // Tipo per i dati dell'orario
 type OrarioData = Array<{
   day: number;
-  events: Array<{ time: string; title: string }>;
+  events: Array<{ time: string; title: string; location: string; professor: string }>;
 }>;
 
-// Cache in-memory per i dati dell'orario con durate diverse per giorno
+// Cache in-memory per i dati dell'orario
 interface CacheItem {
-  data: OrarioData;
+  data: any[]; // Raw events
   timestamp: number;
-  dayOffset: number;
 }
-const cache: Record<number, CacheItem> = {};
+const cache: Record<string, CacheItem> = {};
 
-// Durate di cache differenziate per tipo di giorno
-function getCacheDuration(dayOffset: number): number {
-  if (dayOffset < 0) return 0; // Nessuna cache per i giorni precedenti
-  if (dayOffset === 0) return 30 * 60 * 1000; // 30 minuti per oggi
-  return 4 * 60 * 60 * 1000; // 4 ore per i giorni futuri
+function getCacheKey(dayOffset: number): string {
+  const date = addDays(getCurrentItalianDateTime(), dayOffset);
+  return date.toISODate() ?? "default";
 }
 
-const scrap = async (dayOffset: number = 0): Promise<OrarioData> => {
+const fetchRawEvents = async (dayOffset: number = 0) => {
+  const cacheKey = getCacheKey(dayOffset);
   const now = Date.now();
-  const cacheDuration = getCacheDuration(dayOffset);
+  const cacheDuration = dayOffset === 0 ? 15 * 60 * 1000 : 60 * 60 * 1000;
 
-  // Controlla se abbiamo dati in cache ancora validi per il dayOffset richiesto
-  if (
-    cacheDuration > 0 &&
-    cache[dayOffset] &&
-    now - cache[dayOffset].timestamp < cacheDuration
-  ) {
-    return cache[dayOffset].data;
+  if (cache[cacheKey] && now - cache[cacheKey].timestamp < cacheDuration) {
+    return cache[cacheKey].data;
   }
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-gpu",
-    ],
-  });
+  const currentDate = getCurrentItalianDateTime();
+  const startRange = addDays(currentDate, dayOffset).startOf('day');
+  const endRange = startRange.plus({ days: 7 }).endOf('day');
+
+  const url = 'https://unins.prod.up.cineca.it/api/Impegni/getImpegniCalendarioPubblico';
+  const body = {
+    "mostraImpegniAnnullati": true,
+    "mostraIndisponibilitaTotali": false,
+    "linkCalendarioId": "68cb8d7de418fc00412a332a",
+    "clienteId": "59f05192a635f443422fe8fd",
+    "pianificazioneTemplate": false,
+    "dataInizio": startRange.toISO(),
+    "dataFine": endRange.toISO()
+  };
+
   try {
-    const page = await browser.newPage();
-
-    // NON disabilitare le risorse - potrebbero essere necessarie per il rendering
-    await page.goto(
-      "https://unins.prod.up.cineca.it/calendarioPubblico/linkCalendarioId=68cb8d7de418fc00412a332a",
-      { waitUntil: "networkidle2", timeout: 30000 }, // Aumentato timeout e ritorno a networkidle2
-    );
-
-    // Debug: controlla cosa c'è sulla pagina
-    const pageContent = await page.evaluate(() => {
-      const cols = document.querySelectorAll(".fc-content-col");
-
-      return Array.from(cols).map((col, dayIndex) => {
-        const events = Array.from(col.querySelectorAll(".fc-event"));
-
-        // Estrai tutti i dati senza filtri per il debug
-        const allEvents = events.map((card) => {
-          const time =
-            card.querySelector(".fc-time")?.textContent?.trim() ?? "";
-          const title =
-            card.querySelector(".fc-title")?.textContent?.trim() ?? "";
-          return { time, title };
-        });
-
-        // Applica il filtro per mantenere solo gli eventi con "Var"
-        const parsedEvents = allEvents.filter((event) =>
-          event.title.includes("Var"),
-        );
-
-        return {
-          day: dayIndex,
-          events: parsedEvents,
-          allEvents, // Aggiungi tutti gli eventi per il debug
-        };
-      });
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
     });
 
-    // Rimuovi allEvents prima di salvare nella cache
-    const filteredContent = pageContent.map((day) => ({
-      day: day.day,
-      events: day.events,
-    }));
-
-    // Salva in cache solo se abbiamo dati
-    if (filteredContent.some((day) => day.events.length > 0)) {
-      cache[dayOffset] = {
-        data: filteredContent,
-        timestamp: Date.now(),
-        dayOffset,
-      };
-    } else {
-      console.warn("No events found on page! Not caching empty data.");
-    }
-
-    return filteredContent;
-  } finally {
-    await browser.close();
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const rawData = await response.json();
+    const events = Array.isArray(rawData) ? rawData : (rawData.impegni || []);
+    
+    cache[cacheKey] = { data: events, timestamp: now };
+    return events;
+  } catch (error) {
+    console.error("Failed to fetch orario:", error);
+    return [];
   }
 };
+
+const processEvents = (events: any[], courseName: string, locationFilter: "Varese" | "Como" | "Tutte"): OrarioData => {
+  const result: OrarioData = [0, 1, 2, 3, 4, 5, 6].map(d => ({ day: d, events: [] }));
+
+  events.forEach((e: any) => {
+    // 1. Filter by Course Name (default "INFORMATICA")
+    const matchesCorso = e.corsi && e.corsi.some((c: any) => c.descrizione.toUpperCase().includes(courseName.toUpperCase()));
+    // Fallback for "Var" logic if needed, but strict course matching is better for now.
+    // Keeping "Var" for legacy support if strict name fails? Let's stick to what the user asked: "Recuperi le sue materie".
+    const matchesVar = e.nome && e.nome.includes("Var");
+    
+    // If courseName is generic "INFORMATICA", we might want to keep the "Var" fallback.
+    // But if the user selects something specific, we should respect it.
+    // For now, let's allow both if courseName is "INFORMATICA".
+    let isMatch = matchesCorso;
+    if (courseName === "INFORMATICA") {
+        isMatch = isMatch || matchesVar;
+    }
+
+    if (!isMatch) return;
+
+    // 2. Filter by Location
+    let eventCity = "Unknown";
+    let aulaName = "N/A";
+    
+    if (e.aule && e.aule.length > 0) {
+        aulaName = e.aule[0].descrizione;
+        if (e.aule[0].edificio) {
+            eventCity = e.aule[0].edificio.comune;
+        }
+    }
+
+    if (locationFilter !== "Tutte" && eventCity !== locationFilter) {
+        return;
+    }
+
+    const date = LuxonDateTime.fromISO(e.dataInizio).setZone("Europe/Rome");
+    const dayIdx = getDayOfWeek(date);
+    
+    const start = LuxonDateTime.fromISO(e.dataInizio).setZone("Europe/Rome").toFormat("HH:mm");
+    const end = LuxonDateTime.fromISO(e.dataFine).setZone("Europe/Rome").toFormat("HH:mm");
+    const professor = e.docenti && e.docenti.length > 0 ? `${e.docenti[0].cognome} ${e.docenti[0].nome}` : "N/A";
+    const time = `${start} - ${end}`;
+    const title = e.nome || "Lezione";
+    const location = `${aulaName} (${eventCity})`;
+
+    if (dayIdx >= 0 && dayIdx <= 6) {
+      // Check for duplicates
+      const isDuplicate = result[dayIdx].events.some(
+        (existing) => 
+          existing.title === title && 
+          existing.time === time && 
+          existing.location === location
+      );
+
+      if (!isDuplicate) {
+        result[dayIdx].events.push({
+          time,
+          title,
+          location,
+          professor
+        });
+      }
+    }
+  });
+
+  result.forEach(day => {
+    day.events.sort((a, b) => a.time.localeCompare(b.time));
+  });
+
+  return result;
+}
 
 // Utility per trovare la prossima lezione
 const findNextLesson = (
@@ -121,10 +149,7 @@ const findNextLesson = (
   currentTime: DateTime,
   isToday: boolean,
 ) => {
-  // Se non è oggi, non cerchiamo la "prossima" lezione basata sull'ora
-  if (!isToday) {
-    return null;
-  }
+  if (!isToday) return null;
 
   const now = currentTime.hour * 60 + currentTime.minute;
 
@@ -146,19 +171,16 @@ const findNextLesson = (
     })
     .filter((lesson): lesson is NonNullable<typeof lesson> => lesson !== null);
 
-  // Trova la lezione in corso
   const currentLesson = parsedLessons.find(
-    (lesson) =>
-      lesson && now >= lesson.startMinutes && now <= lesson.endMinutes,
+    (lesson) => now >= lesson.startMinutes && now <= lesson.endMinutes,
   );
 
   if (currentLesson) {
     return { lesson: currentLesson, status: "current" as const };
   }
 
-  // Trova la prossima lezione
   const nextLesson = parsedLessons
-    .filter((lesson) => lesson && lesson.startMinutes > now)
+    .filter((lesson) => lesson.startMinutes > now)
     .sort((a, b) => a.startMinutes - b.startMinutes)[0];
 
   if (nextLesson) {
@@ -170,51 +192,45 @@ const findNextLesson = (
 
 export const orarioRouter = createTRPCRouter({
   getOrario: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .query(async () => {
-      return await scrap();
+    .input(z.object({ 
+      name: z.string().default("INFORMATICA"),
+      location: z.enum(["Varese", "Como", "Tutte"]).default("Tutte"),
+      dayOffset: z.number().default(0) // Added dayOffset parameter
+    }))
+    .query(async ({ input }) => {
+      const rawEvents = await fetchRawEvents(input.dayOffset); // Pass dayOffset here
+      return processEvents(rawEvents, input.name, input.location);
     }),
 
   getNextLesson: publicProcedure
     .input(
       z.object({
-        dayOffset: z.number().default(0), // 0 = oggi, 1 = domani, etc.
+        dayOffset: z.number().default(0),
+        name: z.string().default("INFORMATICA"),
+        location: z.enum(["Varese", "Como", "Tutte"]).default("Tutte")
       }),
     )
     .query(async ({ input }) => {
-      // Passa dayOffset alla funzione scrap per utilizzare la cache appropriata
-      const orarioData = await scrap(input.dayOffset);
+      const rawEvents = await fetchRawEvents(input.dayOffset);
+      const orarioData = processEvents(rawEvents, input.name, input.location);
 
       const currentDate = getCurrentItalianDateTime();
       const targetDate = addDays(currentDate, input.dayOffset);
-
       const adjustedDay = getDayOfWeek(targetDate);
 
-      const daySchedule = orarioData.find(
-        (day: {
-          day: number;
-          events: Array<{ time: string; title: string }>;
-        }) => day.day === adjustedDay,
-      );
+      const daySchedule = orarioData.find(day => day.day === adjustedDay);
 
       if (!daySchedule || daySchedule.events.length === 0) {
         return {
           hasLessons: false,
           dayName: [
-            "Lunedì",
-            "Martedì",
-            "Mercoledì",
-            "Giovedì",
-            "Venerdì",
-            "Sabato",
-            "Domenica",
+            "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica",
           ][adjustedDay],
           date: formatDate(targetDate),
           lessons: [],
         };
       }
 
-      // Solo per oggi cerchiamo la prossima lezione
       const isToday = input.dayOffset === 0;
       const nextLessonInfo = findNextLesson(
         daySchedule.events,
@@ -225,13 +241,7 @@ export const orarioRouter = createTRPCRouter({
       return {
         hasLessons: true,
         dayName: [
-          "Lunedì",
-          "Martedì",
-          "Mercoledì",
-          "Giovedì",
-          "Venerdì",
-          "Sabato",
-          "Domenica",
+          "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica",
         ][adjustedDay],
         date: formatDate(targetDate),
         lessons: daySchedule.events,
