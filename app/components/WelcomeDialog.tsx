@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Sparkles, Zap, Globe } from "lucide-react";
+import { ChevronRight, Sparkles, Zap, Globe, MessageSquare } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface WelcomeDialogProps {
@@ -32,6 +32,14 @@ const slides = [
     description:
       "Addio scraping lento! Ora utilizziamo le API ufficiali per un caricamento istantaneo dell'orario.",
     color: "bg-yellow-500",
+  },
+  {
+    id: "feedback",
+    icon: MessageSquare,
+    title: "Suggerimenti",
+    description:
+      "Hai idee o suggerimenti per migliorare l'app? Scrivimi a stefanomarocco0@gmail.com - ogni feedback è prezioso!",
+    color: "bg-green-500",
   },
 ];
 
