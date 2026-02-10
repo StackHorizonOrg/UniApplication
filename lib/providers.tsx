@@ -32,6 +32,15 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
         httpBatchLink({
           url: "/api/trpc",
           transformer: superjson,
+          headers() {
+            const adminToken =
+              typeof window !== "undefined"
+                ? localStorage.getItem("adminToken")
+                : null;
+            return {
+              ...(adminToken ? { "x-admin-token": adminToken } : {}),
+            };
+          },
         }),
       ],
     }),

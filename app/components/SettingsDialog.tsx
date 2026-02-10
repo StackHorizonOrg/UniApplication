@@ -1,7 +1,10 @@
 import {
   AlertCircle,
+  Calendar,
   Check,
   Copy,
+  GraduationCap,
+  Link2,
   Plus,
   Save,
   Search,
@@ -62,6 +65,7 @@ export function SettingsDialog({
   const [newAcademicYear, setNewAcademicYear] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedCourseId, setCopiedCourseId] = useState<string | null>(null);
 
   const userId = useUserId();
 
@@ -132,6 +136,21 @@ export function SettingsDialog({
       await navigator.clipboard.writeText(linkToCopy);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
+    } catch (err) {
+      console.error("Errore durante la copia:", err);
+    }
+  };
+
+  const handleCopyCourseLink = async (
+    linkId: string,
+    courseId: string,
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(linkId);
+      setCopiedCourseId(courseId);
+      setTimeout(() => setCopiedCourseId(null), 2000);
     } catch (err) {
       console.error("Errore durante la copia:", err);
     }
@@ -248,68 +267,137 @@ export function SettingsDialog({
                   course.name.toLowerCase().includes(searchQuery.toLowerCase()),
                 )
                 .map((course) => (
-                  <button
-                    key={course.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedCourse(course);
-                      setIsManualEntry(false);
-                      setPreviewId(course.linkId);
-                      setCalendarUrl("");
-                      setError(null);
-                    }}
-                    className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-all",
-                      selectedCourse?.id === course.id && !isManualEntry
-                        ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
-                        : "bg-white dark:bg-black border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white hover:border-gray-300 dark:hover:border-gray-700",
-                    )}
-                  >
-                    <div
+                  <div key={course.id} className="relative">
+                    <button
+                      type="button"
                       className={cn(
-                        "w-5 h-5 rounded-full flex items-center justify-center border-2 transition-colors flex-shrink-0",
+                        "w-full flex items-center gap-2.5 p-2.5 pr-12 rounded-lg border transition-all group text-left",
                         selectedCourse?.id === course.id && !isManualEntry
-                          ? "border-white dark:border-black bg-white dark:bg-black"
-                          : "border-gray-300 dark:border-gray-700",
+                          ? "bg-black dark:bg-white border-black dark:border-white"
+                          : "bg-white dark:bg-black border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700",
                       )}
+                      onClick={() => {
+                        setSelectedCourse(course);
+                        setIsManualEntry(false);
+                        setPreviewId(course.linkId);
+                        setCalendarUrl("");
+                        setError(null);
+                      }}
                     >
-                      {selectedCourse?.id === course.id && !isManualEntry && (
-                        <div className="w-2 h-2 rounded-full bg-black dark:bg-white" />
+                      <div
+                        className={cn(
+                          "w-4 h-4 rounded-full flex items-center justify-center border-2 transition-colors shrink-0",
+                          selectedCourse?.id === course.id && !isManualEntry
+                            ? "border-white dark:border-black bg-white dark:bg-black"
+                            : "border-gray-300 dark:border-gray-700",
+                        )}
+                      >
+                        {selectedCourse?.id === course.id && !isManualEntry && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-black dark:bg-white" />
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "font-medium text-sm truncate",
+                            selectedCourse?.id === course.id && !isManualEntry
+                              ? "text-white dark:text-black"
+                              : "text-gray-900 dark:text-white",
+                          )}
+                          title={course.name}
+                        >
+                          {course.name}
+                        </span>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {course.year && (
+                            <div
+                              className={cn(
+                                "flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border font-medium whitespace-nowrap",
+                                selectedCourse?.id === course.id &&
+                                  !isManualEntry
+                                  ? "bg-white/10 dark:bg-black/10 border-white/20 dark:border-black/20 text-white dark:text-black"
+                                  : "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-900 text-purple-700 dark:text-purple-300",
+                              )}
+                            >
+                              <GraduationCap className="w-2.5 h-2.5" />
+                              {course.year}°
+                            </div>
+                          )}
+                          {course.academicYear && (
+                            <div
+                              className={cn(
+                                "flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border font-medium whitespace-nowrap",
+                                selectedCourse?.id === course.id &&
+                                  !isManualEntry
+                                  ? "bg-white/10 dark:bg-black/10 border-white/20 dark:border-black/20 text-white dark:text-black"
+                                  : "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300",
+                              )}
+                            >
+                              <Calendar className="w-2.5 h-2.5" />
+                              {course.academicYear}
+                            </div>
+                          )}
+                          {course.status === "pending" && (
+                            <span
+                              className={cn(
+                                "text-[10px] px-1.5 py-0.5 rounded border font-medium whitespace-nowrap",
+                                selectedCourse?.id === course.id &&
+                                  !isManualEntry
+                                  ? "bg-white/10 dark:bg-black/10 border-white/20 dark:border-black/20 text-white dark:text-black"
+                                  : "bg-yellow-50 dark:bg-yellow-950/50 border-yellow-200 dark:border-yellow-900 text-yellow-700 dark:text-yellow-300",
+                              )}
+                            >
+                              ⏳ Attesa
+                            </span>
+                          )}
+                          {course.status === "rejected" && (
+                            <span
+                              className={cn(
+                                "text-[10px] px-1.5 py-0.5 rounded border font-medium whitespace-nowrap",
+                                selectedCourse?.id === course.id &&
+                                  !isManualEntry
+                                  ? "bg-white/10 dark:bg-black/10 border-white/20 dark:border-black/20 text-white dark:text-black"
+                                  : "bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-900 text-red-700 dark:text-red-300",
+                              )}
+                            >
+                              ✕ Rifiutato
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyCourseLink(course.linkId, course.id, e);
+                      }}
+                      className={cn(
+                        "absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded transition-all shrink-0 z-10",
+                        copiedCourseId === course.id
+                          ? selectedCourse?.id === course.id && !isManualEntry
+                            ? "bg-white/20 dark:bg-black/20 text-white dark:text-black"
+                            : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
+                          : selectedCourse?.id === course.id && !isManualEntry
+                            ? "bg-white/10 dark:bg-black/10 text-white dark:text-black hover:bg-white/20 dark:hover:bg-black/20"
+                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
                       )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">
-                        {course.name}
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        {course.year && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                            {course.year}° Anno
-                          </span>
-                        )}
-                        {course.academicYear && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300">
-                            {course.academicYear}
-                          </span>
-                        )}
-                        {course.status === "pending" && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-50 dark:bg-yellow-950/50 border border-yellow-200 dark:border-yellow-900 text-yellow-700 dark:text-yellow-300">
-                            ⏳ In Attesa
-                          </span>
-                        )}
-                        {course.status === "rejected" && (
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300">
-                            ✕ Rifiutato
-                          </span>
-                        )}
-                        {course.verified && course.status === "approved" && (
-                          <span className="text-xs opacity-70">
-                            ✓ Verificato
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </button>
+                      title={
+                        copiedCourseId === course.id
+                          ? "Link Copiato!"
+                          : "Copia Link Cineca"
+                      }
+                    >
+                      {copiedCourseId === course.id ? (
+                        <Check className="w-3.5 h-3.5" />
+                      ) : (
+                        <Link2 className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
                 ))}
 
               <button
@@ -364,66 +452,21 @@ export function SettingsDialog({
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2">
-                  <label
-                    htmlFor="course-name-input"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                  >
-                    Nome del Corso *
-                  </label>
-                  <input
-                    id="course-name-input"
-                    type="text"
-                    value={newCourseName}
-                    onChange={(e) => setNewCourseName(e.target.value)}
-                    placeholder="Es: Informatica - Varese"
-                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-white focus:outline-none transition-all text-sm"
-                  />
-                </div>
-
-                <div className="col-span-2 sm:col-span-1">
-                  <label
-                    htmlFor="course-year-input"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                  >
-                    Anno del Corso *
-                  </label>
-                  <Select
-                    value={newCourseYear === "" ? "" : String(newCourseYear)}
-                    onValueChange={(value) =>
-                      setNewCourseYear(value === "" ? "" : Number(value))
-                    }
-                  >
-                    <SelectTrigger
-                      id="course-year-input"
-                      className="bg-gray-50 dark:bg-gray-900"
-                    >
-                      <SelectValue placeholder="Seleziona anno..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1° Anno</SelectItem>
-                      <SelectItem value="2">2° Anno</SelectItem>
-                      <SelectItem value="3">3° Anno</SelectItem>
-                      <SelectItem value="4">4° Anno</SelectItem>
-                      <SelectItem value="5">5° Anno</SelectItem>
-                      <SelectItem value="6">6° Anno</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="col-span-2 sm:col-span-1">
-                  <label
-                    htmlFor="academic-year-input"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                  >
-                    Anno Accademico
-                  </label>
-                  <AcademicYearPicker
-                    value={newAcademicYear}
-                    onChange={setNewAcademicYear}
-                  />
-                </div>
+              <div>
+                <label
+                  htmlFor="course-name-input"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  Nome del Corso *
+                </label>
+                <input
+                  id="course-name-input"
+                  type="text"
+                  value={newCourseName}
+                  onChange={(e) => setNewCourseName(e.target.value)}
+                  placeholder="Es: Informatica - Varese"
+                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-white focus:outline-none transition-all text-sm"
+                />
               </div>
 
               <div>
@@ -474,6 +517,51 @@ export function SettingsDialog({
                   Incolla l'URL completo del calendario pubblico fornito
                   dall'università
                 </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label
+                    htmlFor="course-year-input"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Anno del Corso *
+                  </label>
+                  <Select
+                    value={newCourseYear === "" ? "" : String(newCourseYear)}
+                    onValueChange={(value) =>
+                      setNewCourseYear(value === "" ? "" : Number(value))
+                    }
+                  >
+                    <SelectTrigger
+                      id="course-year-input"
+                      className="bg-gray-50 dark:bg-gray-900 h-11"
+                    >
+                      <SelectValue placeholder="Seleziona anno..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1° Anno</SelectItem>
+                      <SelectItem value="2">2° Anno</SelectItem>
+                      <SelectItem value="3">3° Anno</SelectItem>
+                      <SelectItem value="4">4° Anno</SelectItem>
+                      <SelectItem value="5">5° Anno</SelectItem>
+                      <SelectItem value="6">6° Anno</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="academic-year-input"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Anno Accademico
+                  </label>
+                  <AcademicYearPicker
+                    value={newAcademicYear}
+                    onChange={setNewAcademicYear}
+                  />
+                </div>
               </div>
 
               {error && (

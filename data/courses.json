@@ -1,4 +1,15 @@
 {
   "courses": [
+    {
+      "name": "Informatica - Varese",
+      "linkId": "6985e1d871427c00377aa515",
+      "year": 2,
+      "academicYear": "2025/2026",
+      "status": "approved",
+      "verified": true,
+      "addedBy": "admin",
+      "id": "course-1770751248080-5nblcoy3g",
+      "createdAt": "2026-02-10T19:20:48.080Z"
+    }
   ]
 }

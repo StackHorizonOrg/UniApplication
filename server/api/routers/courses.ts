@@ -9,7 +9,7 @@ import {
   rejectCourse,
   verifyCourse,
 } from "@/lib/courses";
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import { adminProcedure, createTRPCRouter, publicProcedure } from "../trpc";
 
 export const coursesRouter = createTRPCRouter({
   getAll: publicProcedure
@@ -24,11 +24,11 @@ export const coursesRouter = createTRPCRouter({
       return getVisibleCourses(input?.userId);
     }),
 
-  getAllForAdmin: publicProcedure.query(() => {
+  getAllForAdmin: adminProcedure.query(() => {
     return getAllCoursesForAdmin();
   }),
 
-  getPending: publicProcedure.query(() => {
+  getPending: adminProcedure.query(() => {
     return getPendingCourses();
   }),
 
@@ -43,20 +43,26 @@ export const coursesRouter = createTRPCRouter({
         addedBy: z.string().default("user"),
       }),
     )
-    .mutation(({ input }) => {
+    .mutation(({ input, ctx }) => {
+      // Se l'utente è admin, il corso viene automaticamente approvato
+      const isAdmin = ctx.isAdmin;
+      const status =
+        isAdmin && input.addedBy === "admin" ? "approved" : "pending";
+      const verified = isAdmin && input.addedBy === "admin";
+
       return addCourse({
         name: input.name,
         linkId: input.linkId,
         year: input.year,
         academicYear: input.academicYear,
-        status: "pending",
-        verified: false,
+        status,
+        verified,
         addedBy: input.addedBy,
         userId: input.userId,
       });
     }),
 
-  approve: publicProcedure
+  approve: adminProcedure
     .input(z.object({ courseId: z.string() }))
     .mutation(({ input }) => {
       try {
@@ -71,21 +77,21 @@ export const coursesRouter = createTRPCRouter({
       }
     }),
 
-  reject: publicProcedure
+  reject: adminProcedure
     .input(z.object({ courseId: z.string() }))
     .mutation(({ input }) => {
       const success = rejectCourse(input.courseId);
       return { success };
     }),
 
-  verify: publicProcedure
+  verify: adminProcedure
     .input(z.object({ courseId: z.string() }))
     .mutation(({ input }) => {
       const success = verifyCourse(input.courseId);
       return { success };
     }),
 
-  delete: publicProcedure
+  delete: adminProcedure
     .input(z.object({ courseId: z.string() }))
     .mutation(({ input }) => {
       const success = deleteCourse(input.courseId);
