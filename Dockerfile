@@ -22,6 +22,7 @@ RUN pnpm install --frozen-lockfile
 
 # Copia il codice sorgente
 COPY app ./app
+COPY components ./components
 COPY lib ./lib
 COPY server ./server
 
