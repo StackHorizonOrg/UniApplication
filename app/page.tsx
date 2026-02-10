@@ -9,10 +9,16 @@ import { CalendarView } from "./components/CalendarView";
 import NextLessonCard from "./components/NextLessonCard";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { WelcomeDialog } from "./components/WelcomeDialog";
 
 export default function Home() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [calendarId] = useLocalStorage<string>("calendarId", "");
+  const [hasSeenWelcome, setHasSeenWelcome] = useLocalStorage<boolean>(
+    "hasSeenWelcomeV2",
+    false,
+  );
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
@@ -21,10 +27,27 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (isClient && !calendarId) {
+    if (isClient && !hasSeenWelcome) {
+      setIsWelcomeOpen(true);
+      setIsSettingsOpen(false);
+    } else if (isClient && hasSeenWelcome && !calendarId) {
       setIsSettingsOpen(true);
     }
-  }, [isClient, calendarId]);
+  }, [isClient, calendarId, hasSeenWelcome]);
+
+  const handleWelcomeComplete = () => {
+    setHasSeenWelcome(true);
+    setIsWelcomeOpen(false);
+    if (!calendarId) {
+      setTimeout(() => {
+        setIsSettingsOpen(true);
+      }, 300);
+    }
+  };
+
+  const handleShowWelcome = () => {
+    setIsWelcomeOpen(true);
+  };
 
   const {
     data: orario,
@@ -66,7 +89,8 @@ export default function Home() {
         <SettingsDialog
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
-          forceOpen={!calendarId}
+          forceOpen={hasSeenWelcome && !calendarId}
+          onShowWelcome={handleShowWelcome}
         />
       </div>
     );
@@ -108,7 +132,8 @@ export default function Home() {
         <SettingsDialog
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
-          forceOpen={!calendarId}
+          forceOpen={hasSeenWelcome && !calendarId}
+          onShowWelcome={handleShowWelcome}
         />
       </div>
     );
@@ -165,10 +190,16 @@ export default function Home() {
 
       <ThemeToggle />
 
+      <WelcomeDialog
+        isOpen={isWelcomeOpen}
+        onComplete={handleWelcomeComplete}
+      />
+
       <SettingsDialog
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        forceOpen={!calendarId}
+        forceOpen={hasSeenWelcome && !calendarId}
+        onShowWelcome={handleShowWelcome}
       />
     </div>
   );

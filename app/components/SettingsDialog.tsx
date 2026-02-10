@@ -1,4 +1,4 @@
-import { AlertCircle, Check, Save, Search, X } from "lucide-react";
+import { AlertCircle, Check, Save, Search, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useLocalStorage } from "@/lib/hooks";
@@ -9,6 +9,7 @@ interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   forceOpen?: boolean;
+  onShowWelcome?: () => void;
 }
 
 const INITIAL_HIDDEN_SUBJECTS: string[] = [];
@@ -17,6 +18,7 @@ export function SettingsDialog({
   isOpen,
   onClose,
   forceOpen = false,
+  onShowWelcome,
 }: SettingsDialogProps) {
   const [calendarId, setCalendarId] = useLocalStorage<string>("calendarId", "");
   const [calendarUrlStore, setCalendarUrlStore] = useLocalStorage<string>(
@@ -223,7 +225,20 @@ export function SettingsDialog({
         </div>
 
         {}
-        <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/20">
+        <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/20 space-y-3">
+          {onShowWelcome && (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onShowWelcome();
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-800 py-2.5 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm"
+            >
+              <Sparkles className="w-4 h-4" />
+              Rivedi Novità V2
+            </button>
+          )}
           <button
             type="button"
             onClick={handleSave}
