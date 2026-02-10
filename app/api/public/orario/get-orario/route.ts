@@ -9,7 +9,7 @@ const corsHeaders = {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const caller = orarioRouter.createCaller({ headers: req.headers });
+    const caller = orarioRouter.createCaller({ isAdmin: false, headers: req.headers });
     const result = await caller.getOrario({
       name: body.name,
     });
