@@ -4,8 +4,10 @@ import { Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useLocalStorage } from "@/lib/hooks";
-import { parseOrarioData } from "@/lib/orario-utils";
+import type { DaySchedule } from "@/lib/orario-utils";
+import { getMateriaColorMap, parseOrarioData } from "@/lib/orario-utils";
 import { CalendarView } from "./components/CalendarView";
+import { DayView } from "./components/DayView";
 import NextLessonCard from "./components/NextLessonCard";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { ThemeToggle } from "./components/ThemeToggle";
@@ -13,6 +15,7 @@ import { WelcomeDialog } from "./components/WelcomeDialog";
 
 export default function Home() {
   const [weekOffset, setWeekOffset] = useState(0);
+  const [selectedDay, setSelectedDay] = useState<DaySchedule | null>(null);
   const [calendarId] = useLocalStorage<string>("calendarId", "");
   const [courseName] = useLocalStorage<string>("courseName", "");
   const [hasSeenWelcome, setHasSeenWelcome] = useLocalStorage<boolean>(
@@ -68,6 +71,11 @@ export default function Home() {
   );
 
   const schedule = orario ? parseOrarioData(orario) : [];
+
+  const allMaterie = schedule.flatMap((day) =>
+    day.events.map((ev) => ev.materia),
+  );
+  const materiaColorMap = getMateriaColorMap(allMaterie);
 
   const handleNextWeek = () => setWeekOffset((prev) => prev + 7);
   const handlePrevWeek = () => setWeekOffset((prev) => prev - 7);
@@ -141,15 +149,15 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-white flex flex-col">
-      <main className="w-full px-4 py-4 space-y-6 flex-1">
-        <div className="flex items-center justify-between mb-4">
+    <div className="h-screen bg-white dark:bg-black text-gray-900 dark:text-white flex flex-col overflow-hidden">
+      <main className="w-full px-4 py-4 lg:px-8 lg:py-6 flex-1 max-w-400 mx-auto flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between mb-4 lg:mb-6 flex-shrink-0">
           <div>
-            <h1 className="text-4xl font-semibold text-gray-900 dark:text-white font-serif">
+            <h1 className="text-4xl lg:text-5xl font-semibold text-gray-900 dark:text-white font-serif">
               Orario Insubria
             </h1>
             {courseName && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-sm lg:text-base text-gray-500 dark:text-gray-400 mt-1">
                 {courseName}
               </p>
             )}
@@ -159,17 +167,17 @@ export default function Home() {
             onClick={() => setIsSettingsOpen(true)}
             className="p-2 text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors"
           >
-            <Settings className="w-5 h-5" />
+            <Settings className="w-5 h-5 lg:w-6 lg:h-6" />
           </button>
         </div>
 
         {calendarId ? (
-          <>
-            <section>
+          <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-4 flex-1 overflow-hidden">
+            <section className="w-full lg:col-span-3 flex-shrink-0 lg:overflow-hidden">
               <NextLessonCard schedule={schedule} />
             </section>
 
-            <section>
+            <section className="w-full lg:col-span-5 lg:overflow-hidden">
               <CalendarView
                 schedule={schedule}
                 weekOffset={weekOffset}
@@ -177,9 +185,15 @@ export default function Home() {
                 onPrevWeek={handlePrevWeek}
                 onReset={handleReset}
                 onSetOffset={setWeekOffset}
+                onDaySelect={setSelectedDay}
+                selectedDay={selectedDay}
               />
             </section>
-          </>
+
+            <section className="hidden lg:block lg:col-span-4 lg:overflow-hidden">
+              <DayView day={selectedDay} materiaColorMap={materiaColorMap} />
+            </section>
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-4">
             <p className="text-gray-500 dark:text-gray-400">

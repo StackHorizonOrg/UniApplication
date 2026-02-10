@@ -94,23 +94,23 @@ export function CalendarDayDialog({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 dark:bg-black/90 backdrop-blur-sm">
-      <div className="w-full h-full mx-0 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-none overflow-hidden flex flex-col">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-800 text-center relative">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white font-serif">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 dark:bg-black/90 backdrop-blur-sm p-0 lg:p-4">
+      <div className="w-full h-full lg:w-auto lg:h-auto lg:max-w-4xl lg:max-h-[90vh] mx-0 lg:mx-auto bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-none lg:rounded-2xl overflow-hidden flex flex-col">
+        <div className="p-4 lg:p-6 border-b border-gray-200 dark:border-gray-800 text-center relative">
+          <h2 className="text-lg lg:text-xl font-medium text-gray-900 dark:text-white font-serif">
             {getDayName(day.day)}
           </h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-1">
+          <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 font-mono mt-1">
             {day.events.length}{" "}
             {day.events.length === 1 ? "lezione" : "lezioni"}
           </p>
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:white transition-colors active:scale-95"
+            className="absolute top-4 lg:top-6 right-4 lg:right-6 p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:white transition-colors active:scale-95"
           >
             <svg
-              className="w-5 h-5"
+              className="w-5 h-5 lg:w-6 lg:h-6"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -128,25 +128,27 @@ export function CalendarDayDialog({
 
         <div className="flex-1 overflow-y-auto">
           {otherEvents.length > 0 && (
-            <div className="p-4 space-y-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800">
-              <h3 className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
+            <div className="p-4 lg:p-6 space-y-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800">
+              <h3 className="text-[10px] lg:text-xs font-mono text-gray-400 uppercase tracking-widest">
                 Altre Attività
               </h3>
               {otherEvents.map((event) => (
                 <div
                   key={`${event.materia}-${event.time}`}
-                  className="p-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-black"
+                  className="p-3 lg:p-4 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-black"
                 >
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="font-medium text-sm dark:text-white">
+                    <span className="font-medium text-sm lg:text-base dark:text-white">
                       {event.materia}
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 font-mono">
+                    <span className="text-[10px] lg:text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 font-mono">
                       {event.time}
                     </span>
                   </div>
                   {event.aula && (
-                    <p className="text-xs text-gray-500">{event.aula}</p>
+                    <p className="text-xs lg:text-sm text-gray-500">
+                      {event.aula}
+                    </p>
                   )}
                 </div>
               ))}
@@ -155,11 +157,11 @@ export function CalendarDayDialog({
 
           <div className="relative">
             <div className="flex">
-              <div className="w-16 flex-shrink-0">
+              <div className="w-16 lg:w-20 shrink-0">
                 {timeSlots.map((slot) => (
                   <div
                     key={slot}
-                    className="text-right pr-3 text-xs font-mono text-gray-500 dark:text-gray-400"
+                    className="text-right pr-3 lg:pr-4 text-xs lg:text-sm font-mono text-gray-500 dark:text-gray-400"
                     style={{ height: `${HALF_HOUR_HEIGHT}px` }}
                   >
                     {formatTime(slot)}
@@ -190,7 +192,7 @@ export function CalendarDayDialog({
                   return (
                     <div
                       key={`${event.materia}-${event.time}`}
-                      className="absolute w-full px-3"
+                      className="absolute w-full px-3 lg:px-4"
                       style={{
                         top: `${top}px`,
                         height: `${Math.max(height - 4, 30)}px`,
@@ -199,17 +201,17 @@ export function CalendarDayDialog({
                       }}
                     >
                       <div
-                        className="h-full rounded-lg p-3 text-xs overflow-hidden flex flex-col"
+                        className="h-full rounded-lg p-3 lg:p-4 text-xs lg:text-sm overflow-hidden flex flex-col"
                         style={{
                           backgroundColor: `${color}40`,
                           boxShadow: `0 1px 3px rgba(0,0,0,0.1), inset 0 -2px 0 ${color}`,
                           minHeight: "100%",
                         }}
                       >
-                        <div className="font-medium text-gray-900 dark:text-white mb-2 text-sm leading-relaxed flex items-center flex-wrap gap-2">
+                        <div className="font-medium text-gray-900 dark:text-white mb-2 text-sm lg:text-base leading-relaxed flex items-center flex-wrap gap-2">
                           <span className="flex-1">{event.materia}</span>
                           <span
-                            className={`text-xs px-2 py-0.5 rounded-full font-mono flex-shrink-0 ${
+                            className={`text-xs lg:text-sm px-2 py-0.5 rounded-full font-mono shrink-0 ${
                               event.tipo === "Laboratorio"
                                 ? "bg-orange-200 text-orange-900 dark:bg-orange-700 dark:text-white"
                                 : "bg-blue-200 text-blue-900 dark:bg-blue-700 dark:text-white"
@@ -221,7 +223,7 @@ export function CalendarDayDialog({
                         <div className="text-gray-600 dark:text-gray-400 space-y-1.5 flex-1">
                           <div className="flex items-center gap-2">
                             <svg
-                              className="w-3 h-3 flex-shrink-0"
+                              className="w-3 h-3 lg:w-4 lg:h-4 shrink-0"
                               fill="currentColor"
                               viewBox="0 0 20 20"
                             >
@@ -232,7 +234,7 @@ export function CalendarDayDialog({
                                 clipRule="evenodd"
                               />
                             </svg>
-                            <span className="font-mono text-xs">
+                            <span className="font-mono text-xs lg:text-sm">
                               {event.time
                                 .split(" - ")
                                 .map(formatTime)
@@ -242,7 +244,7 @@ export function CalendarDayDialog({
                           {event.aula && (
                             <div className="flex items-start gap-2">
                               <svg
-                                className="w-3 h-3 flex-shrink-0 mt-0.5"
+                                className="w-3 h-3 lg:w-4 lg:h-4 shrink-0 mt-0.5"
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
                               >
@@ -253,7 +255,7 @@ export function CalendarDayDialog({
                                   clipRule="evenodd"
                                 />
                               </svg>
-                              <span className="leading-relaxed text-xs">
+                              <span className="leading-relaxed text-xs lg:text-sm">
                                 {event.aula}
                               </span>
                             </div>
@@ -261,7 +263,7 @@ export function CalendarDayDialog({
                           {event.docente && (
                             <div className="flex items-start gap-2">
                               <svg
-                                className="w-3 h-3 flex-shrink-0 mt-0.5"
+                                className="w-3 h-3 lg:w-4 lg:h-4 shrink-0 mt-0.5"
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
                               >
@@ -272,7 +274,7 @@ export function CalendarDayDialog({
                                   clipRule="evenodd"
                                 />
                               </svg>
-                              <span className="leading-relaxed text-xs">
+                              <span className="leading-relaxed text-xs lg:text-sm">
                                 {event.docente}
                               </span>
                             </div>
@@ -287,13 +289,14 @@ export function CalendarDayDialog({
           </div>
         </div>
 
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800 text-center">
+        <div className="p-4 lg:p-6 border-t border-gray-200 dark:border-gray-800 text-center">
           <button
             type="button"
             onClick={onClose}
-            className="text-xs font-mono text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            className="text-xs lg:text-sm font-mono text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
-            Tocca per chiudere
+            <span className="lg:hidden">Tocca per chiudere</span>
+            <span className="hidden lg:inline">Clicca per chiudere</span>
           </button>
         </div>
       </div>

@@ -6,6 +6,7 @@ import {
   MessageSquare,
   Smartphone,
   Sparkles,
+  Users,
   Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -31,6 +32,14 @@ const slides = [
     description:
       "Non più limitato a Informatica! Funziona con tutti i corsi di laurea dell'Università dell'Insubria.",
     color: "bg-blue-500",
+  },
+  {
+    id: "community",
+    icon: Users,
+    title: "Grazie alla Community",
+    description:
+      "I calendari dei vari corsi di laurea vengono mappati grazie al contributo degli utenti come te! Insieme rendiamo l'app sempre più completa.",
+    color: "bg-pink-500",
   },
   {
     id: "fast",

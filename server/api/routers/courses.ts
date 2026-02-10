@@ -44,7 +44,6 @@ export const coursesRouter = createTRPCRouter({
       }),
     )
     .mutation(({ input, ctx }) => {
-      // Se l'utente è admin, il corso viene automaticamente approvato
       const isAdmin = ctx.isAdmin;
       const status =
         isAdmin && input.addedBy === "admin" ? "approved" : "pending";

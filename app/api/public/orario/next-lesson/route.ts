@@ -36,7 +36,10 @@ export async function GET(req: Request) {
       });
     }
 
-    const caller = orarioRouter.createCaller({ isAdmin: false, headers: req.headers });
+    const caller = orarioRouter.createCaller({
+      isAdmin: false,
+      headers: req.headers,
+    });
     const result = await caller.getNextLesson({ dayOffset });
 
     if (cacheDuration > 0) {
