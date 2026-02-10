@@ -4,31 +4,21 @@ FROM node:20-alpine
 RUN apk add --no-cache tzdata
 ENV TZ=Europe/Rome
 
-# Installa Chromium e le dipendenze necessarie per Puppeteer
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont
-
-# Indica a Puppeteer di usare il Chromium installato
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+# Abilita pnpm tramite corepack
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
 # Copia i file di configurazione del package
-COPY package.json package-lock.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Copia TUTTI i file di configurazione necessari
 COPY next.config.ts tsconfig.json ./
 COPY tailwind.config.ts postcss.config.mjs ./
 COPY components.json biome.json ./
 
-# Installa le dipendenze
-RUN npm ci
+# Installa le dipendenze (frozen-lockfile equivale a npm ci)
+RUN pnpm install --frozen-lockfile
 
 # Copia il codice sorgente
 COPY app ./app
@@ -36,14 +26,14 @@ COPY lib ./lib
 COPY server ./server
 
 # Build dell'applicazione
-RUN npm run build
+RUN pnpm run build
 
 # Rimuovi le dipendenze di sviluppo
-RUN npm prune --omit=dev
+RUN pnpm prune --prod
 
 EXPOSE 3001
 ENV PORT=3001
-CMD ["npm", "start"]
+CMD ["pnpm", "start"]
 
 
 # docker build -t uniapplication .
