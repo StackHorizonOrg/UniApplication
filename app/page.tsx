@@ -151,19 +151,19 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen bg-white dark:bg-black text-gray-900 dark:text-white flex flex-col overflow-hidden">
-      <main className="w-full px-4 py-4 lg:px-8 lg:py-6 flex-1 max-w-400 mx-auto flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between mb-4 lg:mb-6 flex-shrink-0">
-          <div>
+    <div className="min-h-screen max-h-screen bg-white dark:bg-black text-gray-900 dark:text-white flex flex-col overflow-hidden">
+      <main className="w-full px-4 py-3 portrait:py-4 lg:px-8 lg:py-6 flex-1 max-w-400 mx-auto flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between mb-2 portrait:mb-4 lg:mb-6 flex-shrink-0">
+          <div className="min-w-0 flex-1">
             <h1
-              className="text-4xl lg:text-5xl font-semibold text-gray-900 dark:text-white font-serif cursor-default select-none"
+              className="text-xl landscape:text-2xl portrait:text-4xl lg:text-5xl font-semibold text-gray-900 dark:text-white font-serif cursor-default select-none truncate"
               onDoubleClick={() => router.push("/admin")}
               title="Doppio click per accedere all'admin"
             >
               Orario Insubria
             </h1>
             {courseName && (
-              <p className="text-sm lg:text-base text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-[10px] landscape:text-xs portrait:text-sm lg:text-base text-gray-500 dark:text-gray-400 mt-0.5 portrait:mt-1 truncate">
                 {courseName}
               </p>
             )}
@@ -171,19 +171,19 @@ export default function Home() {
           <button
             type="button"
             onClick={() => setIsSettingsOpen(true)}
-            className="p-2 text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors"
+            className="p-2 text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors flex-shrink-0 ml-2"
           >
-            <Settings className="w-5 h-5 lg:w-6 lg:h-6" />
+            <Settings className="w-4 h-4 portrait:w-5 portrait:h-5 lg:w-6 lg:h-6" />
           </button>
         </div>
 
         {calendarId ? (
-          <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-4 flex-1 overflow-hidden">
-            <section className="w-full lg:col-span-3 flex-shrink-0 lg:overflow-hidden">
+          <div className="flex flex-col landscape:flex-row lg:grid lg:grid-cols-12 gap-2 landscape:gap-3 portrait:gap-6 lg:gap-4 flex-1 overflow-hidden min-h-0">
+            <section className="w-full landscape:w-[280px] lg:col-span-3 flex-shrink-0 landscape:overflow-hidden">
               <NextLessonCard schedule={schedule} />
             </section>
 
-            <section className="w-full lg:col-span-5 lg:overflow-hidden">
+            <section className="w-full landscape:flex-1 lg:col-span-5 lg:overflow-hidden flex-1 min-h-0 portrait:flex-initial overflow-hidden">
               <CalendarView
                 schedule={schedule}
                 weekOffset={weekOffset}

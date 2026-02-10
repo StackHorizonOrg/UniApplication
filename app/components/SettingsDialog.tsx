@@ -215,14 +215,18 @@ export function SettingsDialog({
   const canClose = !forceOpen || (forceOpen && calendarId);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 portrait:p-4">
+      <div className={cn(
+        "w-full bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-2xl flex flex-col",
+        "portrait:max-w-lg portrait:max-h-[90vh]",
+        "landscape:max-w-[75vw] landscape:max-h-[85vh]"
+      )}>
+        <div className="px-3 py-2 portrait:p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white font-serif">
+            <h2 className="text-base portrait:text-xl font-bold text-gray-900 dark:text-white font-serif">
               Configurazione
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-[10px] portrait:text-sm text-gray-500 dark:text-gray-400 mt-0.5 portrait:mt-1">
               Imposta il calendario universitario
             </p>
           </div>
@@ -230,14 +234,14 @@ export function SettingsDialog({
             <button
               type="button"
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors"
+              className="p-1.5 portrait:p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors"
             >
-              <X className="w-5 h-5 text-gray-500" />
+              <X className="w-4 h-4 portrait:w-5 portrait:h-5 text-gray-500" />
             </button>
           )}
         </div>
 
-        <div className="p-6 overflow-y-auto space-y-6">
+        <div className="px-3 py-2 portrait:p-6 overflow-y-auto space-y-3 portrait:space-y-6">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -645,7 +649,7 @@ export function SettingsDialog({
           )}
         </div>
 
-        <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/20 space-y-3">
+        <div className="px-3 py-2 portrait:p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/20 space-y-2 portrait:space-y-3">
           {onShowWelcome && (
             <button
               type="button"
@@ -653,9 +657,9 @@ export function SettingsDialog({
                 onClose();
                 onShowWelcome();
               }}
-              className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-800 py-2.5 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm"
+              className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-800 py-2 portrait:py-2.5 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-xs portrait:text-sm"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-3.5 h-3.5 portrait:w-4 portrait:h-4" />
               Rivedi Novità V2
             </button>
           )}
@@ -663,9 +667,9 @@ export function SettingsDialog({
             type="button"
             onClick={handleSave}
             disabled={!previewId}
-            className="w-full flex items-center justify-center gap-2 bg-black dark:bg-white text-white dark:text-black py-3 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 bg-black dark:bg-white text-white dark:text-black py-2.5 portrait:py-3 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed text-xs portrait:text-sm"
           >
-            <Save className="w-4 h-4" />
+            <Save className="w-3.5 h-3.5 portrait:w-4 portrait:h-4" />
             Salva e Continua
           </button>
         </div>

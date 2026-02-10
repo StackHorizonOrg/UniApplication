@@ -40,11 +40,24 @@ export default function NextLessonCard({
   const [dayOffset, setDayOffset] = useState(0);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(false);
   const [calendarId] = useLocalStorage<string>("calendarId", "");
   const [hiddenSubjects] = useLocalStorage<string[]>(
     "hiddenSubjects",
     INITIAL_HIDDEN_SUBJECTS,
   );
+
+  // Detect landscape orientation on mobile
+  useEffect(() => {
+    const checkOrientation = () => {
+      const isLandscapeMode = window.matchMedia("(max-height: 500px) and (orientation: landscape)").matches;
+      setIsLandscape(isLandscapeMode);
+    };
+
+    checkOrientation();
+    window.addEventListener("resize", checkOrientation);
+    return () => window.removeEventListener("resize", checkOrientation);
+  }, []);
 
   const { data, isLoading, error } = api.orario.getNextLesson.useQuery(
     {
@@ -147,58 +160,83 @@ export default function NextLessonCard({
 
   if (isLoading) {
     return (
-      <div className="w-full h-fit bg-white dark:bg-black border border-gray-200 dark:border-gray-900 rounded-2xl overflow-hidden flex flex-col">
-        <div className="p-3 lg:p-4 border-b border-gray-200 dark:border-gray-900 flex-shrink-0">
-          <div className="flex items-center justify-between">
+      <div className={cn(
+        "w-full bg-white dark:bg-black border border-gray-200 dark:border-gray-900 rounded-2xl overflow-hidden flex flex-col",
+        isLandscape ? "h-full" : "h-fit"
+      )}>
+        <div className={cn(
+          "border-b border-gray-200 dark:border-gray-900 flex-shrink-0",
+          isLandscape ? "px-3 py-1.5" : "p-3 lg:p-4"
+        )}>
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 lg:w-5 lg:h-5 bg-gray-300 dark:bg-white/20 rounded animate-pulse" />
-              <div className="h-3 lg:h-4 bg-gray-300 dark:bg-white/20 rounded w-16 lg:w-20 animate-pulse" />
+              <div className={cn(
+                "bg-gray-300 dark:bg-white/20 rounded animate-pulse",
+                isLandscape ? "w-3.5 h-3.5" : "w-4 h-4 lg:w-5 lg:h-5"
+              )} />
+              <div className={cn(
+                "bg-gray-300 dark:bg-white/20 rounded animate-pulse",
+                isLandscape ? "h-3 w-12" : "h-3 lg:h-4 w-16 lg:w-20"
+              )} />
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-7 h-7 lg:w-8 lg:h-8 bg-gray-300 dark:bg-white/20 rounded-md animate-pulse" />
-              <div className="h-3 lg:h-4 bg-gray-300 dark:bg-white/20 rounded w-8 lg:w-10 animate-pulse" />
-              <div className="w-7 h-7 lg:w-8 lg:h-8 bg-gray-300 dark:bg-white/20 rounded-md animate-pulse" />
+              <div className={cn(
+                "bg-gray-300 dark:bg-white/20 rounded-md animate-pulse",
+                isLandscape ? "w-5 h-5" : "w-7 h-7 lg:w-8 lg:h-8"
+              )} />
+              <div className={cn(
+                "bg-gray-300 dark:bg-white/20 rounded animate-pulse",
+                isLandscape ? "h-3 w-8" : "h-3 lg:h-4 w-8 lg:w-10"
+              )} />
+              <div className={cn(
+                "bg-gray-300 dark:bg-white/20 rounded-md animate-pulse",
+                isLandscape ? "w-5 h-5" : "w-7 h-7 lg:w-8 lg:h-8"
+              )} />
             </div>
           </div>
         </div>
-        <div className="p-4 lg:p-6 flex flex-col justify-between">
-          <div className="h-8 mb-2 flex items-start">
+        <div className={cn(
+          "flex flex-col flex-1",
+          isLandscape ? "p-2" : "p-4 lg:p-6"
+        )}>
+          <div className={cn(isLandscape ? "h-auto mb-1.5" : "h-8 mb-2")}>
             <div className="h-6 lg:h-7 bg-gray-300 dark:bg-white/20 rounded-lg w-20 lg:w-24 animate-pulse" />
           </div>
 
-          <div className="flex flex-col justify-center">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 lg:w-5 lg:h-5 bg-gray-300 dark:bg-white/20 rounded animate-pulse" />
-                <div className="h-4 lg:h-5 bg-gray-300 dark:bg-white/20 rounded w-16 lg:w-20 animate-pulse" />
-              </div>
-              <div className="w-2 h-2 bg-gray-300 dark:bg-white/20 rounded-full animate-pulse" />
+          <div className="flex-1 flex flex-col justify-center space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 lg:w-5 lg:h-5 bg-gray-300 dark:bg-white/20 rounded animate-pulse" />
+              <div className="h-4 lg:h-5 bg-gray-300 dark:bg-white/20 rounded w-16 lg:w-20 animate-pulse" />
             </div>
-
-            <div className="h-4 lg:h-5 bg-gray-300 dark:bg-white/20 rounded w-3/4 mb-4 animate-pulse" />
-
-            <div className="space-y-3">
+            <div className="h-4 lg:h-5 bg-gray-300 dark:bg-white/20 rounded w-3/4 animate-pulse" />
+            <div className={cn(
+              isLandscape ? "flex gap-3" : "space-y-3"
+            )}>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 lg:w-4 lg:h-4 bg-gray-300 dark:bg-white/20 rounded animate-pulse" />
-                <div className="h-3 lg:h-4 bg-gray-300 dark:bg-white/20 rounded w-1/2 animate-pulse" />
+                <div className="h-3 lg:h-4 bg-gray-300 dark:bg-white/20 rounded w-16 lg:w-20 animate-pulse" />
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 lg:w-4 lg:h-4 bg-gray-300 dark:bg-white/20 rounded animate-pulse" />
-                <div className="h-3 lg:h-4 bg-gray-300 dark:bg-white/20 rounded w-2/3 animate-pulse" />
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 lg:w-4 lg:h-4 bg-gray-300 dark:bg-white/20 rounded-sm animate-pulse" />
-                <div className="h-3 lg:h-4 bg-gray-300 dark:bg-white/20 rounded w-1/3 animate-pulse" />
+                <div className="h-3 lg:h-4 bg-gray-300 dark:bg-white/20 rounded w-20 lg:w-24 animate-pulse" />
               </div>
             </div>
           </div>
-
-          <div className="h-10 pt-4 border-t border-gray-200 dark:border-gray-900 flex items-center justify-between">
-            <div className="h-3 lg:h-4 bg-gray-300 dark:bg-white/20 rounded w-8 lg:w-10 animate-pulse" />
-            <div className="flex items-center gap-1">
-              <div className="w-6 h-6 lg:w-7 lg:h-7 bg-gray-300 dark:bg-white/20 rounded-sm animate-pulse" />
-              <div className="w-6 h-6 lg:w-7 lg:h-7 bg-gray-300 dark:bg-white/20 rounded-sm animate-pulse" />
-            </div>
+        </div>
+        <div className={cn(
+          "border-t border-gray-200 dark:border-gray-900 flex items-center justify-between flex-shrink-0",
+          isLandscape ? "px-2 py-1.5" : "px-4 py-3 lg:px-6 lg:py-4"
+        )}>
+          <div className="h-3 lg:h-4 bg-gray-300 dark:bg-white/20 rounded w-8 lg:w-10 animate-pulse" />
+          <div className="flex items-center gap-1">
+            <div className={cn(
+              "bg-gray-300 dark:bg-white/20 rounded-sm animate-pulse",
+              isLandscape ? "w-4 h-4" : "w-6 h-6 lg:w-7 lg:h-7"
+            )} />
+            <div className={cn(
+              "bg-gray-300 dark:bg-white/20 rounded-sm animate-pulse",
+              isLandscape ? "w-4 h-4" : "w-6 h-6 lg:w-7 lg:h-7"
+            )} />
           </div>
         </div>
       </div>
@@ -227,16 +265,29 @@ export default function NextLessonCard({
 
   if (!hasLessons) {
     return (
-      <div className="w-full h-fit bg-white dark:bg-black border border-gray-200 dark:border-gray-900 rounded-2xl overflow-hidden flex flex-col">
-        <div className="p-3 lg:p-4 border-b border-gray-200 dark:border-gray-900 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CalendarIcon className="w-4 h-4 lg:w-5 lg:h-5 text-gray-900 dark:text-white" />
-              <span className="text-sm lg:text-base text-gray-900 dark:text-white font-mono">
+      <div className={cn(
+        "w-full bg-white dark:bg-black border border-gray-200 dark:border-gray-900 rounded-2xl overflow-hidden flex flex-col",
+        isLandscape ? "h-full" : "h-fit"
+      )}>
+        <div className={cn(
+          "border-b border-gray-200 dark:border-gray-900 flex-shrink-0",
+          isLandscape ? "px-3 py-1.5" : "p-3 lg:p-4"
+        )}>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <CalendarIcon className={cn(
+                "text-gray-900 dark:text-white flex-shrink-0",
+                isLandscape ? "w-3.5 h-3.5" : "w-4 h-4 lg:w-5 lg:h-5"
+              )} />
+              <span className={cn(
+                "text-gray-900 dark:text-white font-mono truncate",
+                isLandscape ? "text-xs" : "text-sm lg:text-base"
+              )}>
                 {data?.dayName || "Giorno"}
               </span>
             </div>
-            <div className="flex items-center gap-1">
+
+            <div className="flex items-center gap-1 flex-shrink-0">
               {dayOffset !== 0 && (
                 <button
                   onClick={() => {
@@ -244,11 +295,17 @@ export default function NextLessonCard({
                     userInteractedRef.current = false;
                     setCurrentLessonIndex(0);
                   }}
-                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors mr-1"
+                  className={cn(
+                    "hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors",
+                    isLandscape ? "p-1" : "p-1.5"
+                  )}
                   title="Torna a oggi"
                   type="button"
                 >
-                  <RotateCcw className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-gray-500 dark:text-gray-400" />
+                  <RotateCcw className={cn(
+                    "text-gray-500 dark:text-gray-400",
+                    isLandscape ? "w-3 h-3" : "w-3.5 h-3.5 lg:w-4 lg:h-4"
+                  )} />
                 </button>
               )}
 
@@ -259,10 +316,16 @@ export default function NextLessonCard({
                   setCurrentLessonIndex(0);
                 }}
                 disabled={dayOffset === 0}
-                className="w-7 h-7 lg:w-8 lg:h-8 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 disabled:opacity-30 transition-colors"
+                className={cn(
+                  "border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 disabled:opacity-30 transition-colors",
+                  isLandscape ? "w-5 h-5" : "w-7 h-7 lg:w-8 lg:h-8"
+                )}
                 type="button"
               >
-                <ChevronLeft className="w-3 h-3 lg:w-4 lg:h-4 text-gray-900 dark:text-white" />
+                <ChevronLeft className={cn(
+                  "text-gray-900 dark:text-white",
+                  isLandscape ? "w-2.5 h-2.5" : "w-3 h-3 lg:w-4 lg:h-4"
+                )} />
               </button>
 
               <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
@@ -270,8 +333,9 @@ export default function NextLessonCard({
                   <button
                     type="button"
                     className={cn(
-                      "text-xs lg:text-sm text-gray-900 dark:text-white font-mono px-2 min-w-12 lg:min-w-14 text-center hover:opacity-70 transition-opacity",
+                      "text-gray-900 dark:text-white font-mono text-center hover:opacity-70 transition-opacity px-2 min-w-10",
                       isCalendarOpen && "opacity-50",
+                      isLandscape ? "text-[10px]" : "text-xs lg:text-sm"
                     )}
                   >
                     {getDate(dayOffset)}
@@ -298,27 +362,37 @@ export default function NextLessonCard({
                   setDayOffset(dayOffset + 1);
                   setCurrentLessonIndex(0);
                 }}
-                className="w-7 h-7 lg:w-8 lg:h-8 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 disabled:opacity-30 transition-colors"
+                className={cn(
+                  "border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 disabled:opacity-30 transition-colors",
+                  isLandscape ? "w-5 h-5" : "w-7 h-7 lg:w-8 lg:h-8"
+                )}
                 type="button"
               >
-                <ChevronRight className="w-3 h-3 lg:w-4 lg:h-4 text-gray-900 dark:text-white" />
+                <ChevronRight className={cn(
+                  "text-gray-900 dark:text-white",
+                  isLandscape ? "w-2.5 h-2.5" : "w-3 h-3 lg:w-4 lg:h-4"
+                )} />
               </button>
             </div>
           </div>
         </div>
-        <div className="p-4 lg:p-6 flex flex-col justify-between">
-          <div className="h-8 mb-2" />
 
-          <div className="flex flex-col items-center justify-center">
-            <div className="w-12 h-12 lg:w-14 lg:h-14 border border-gray-900 dark:border-white rounded-2xl flex items-center justify-center mb-4">
-              <div className="w-4 h-4 lg:w-5 lg:h-5 border border-gray-900 dark:border-white rounded-sm" />
-            </div>
-            <p className="text-xs lg:text-sm text-gray-900 dark:text-white font-mono">
-              nessuna lezione
-            </p>
+        <div className="flex flex-col items-center justify-center flex-1 p-4">
+          <div className={cn(
+            "border border-gray-900 dark:border-white rounded-2xl flex items-center justify-center mb-4",
+            isLandscape ? "w-10 h-10" : "w-12 h-12 lg:w-14 lg:h-14"
+          )}>
+            <div className={cn(
+              "border border-gray-900 dark:border-white rounded-sm",
+              isLandscape ? "w-3 h-3" : "w-4 h-4 lg:w-5 lg:h-5"
+            )} />
           </div>
-
-          <div className="h-10 pt-4 border-t border-gray-200 dark:border-gray-900" />
+          <p className={cn(
+            "text-gray-900 dark:text-white font-mono",
+            isLandscape ? "text-[10px]" : "text-xs lg:text-sm"
+          )}>
+            nessuna lezione
+          </p>
         </div>
       </div>
     );
@@ -347,16 +421,30 @@ export default function NextLessonCard({
     data.nextLesson.lesson.time === currentLesson.time;
 
   return (
-    <div className="w-full h-fit bg-white dark:bg-black border border-gray-200 dark:border-gray-900 rounded-2xl overflow-hidden flex flex-col">
-      <div className="p-3 lg:p-4 border-b border-gray-200 dark:border-gray-900 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="w-4 h-4 lg:w-5 lg:h-5 text-gray-900 dark:text-white" />
-            <span className="text-sm lg:text-base text-gray-900 dark:text-white font-mono">
+    <div className={cn(
+      "w-full bg-white dark:bg-black border border-gray-200 dark:border-gray-900 rounded-2xl overflow-hidden flex flex-col",
+      isLandscape ? "h-full" : "h-fit"
+    )}>
+      {/* Header compatto con giorno e controlli data */}
+      <div className={cn(
+        "border-b border-gray-200 dark:border-gray-900 flex-shrink-0",
+        isLandscape ? "px-3 py-1.5" : "p-3 lg:p-4"
+      )}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <CalendarIcon className={cn(
+              "text-gray-900 dark:text-white flex-shrink-0",
+              isLandscape ? "w-3.5 h-3.5" : "w-4 h-4 lg:w-5 lg:h-5"
+            )} />
+            <span className={cn(
+              "text-gray-900 dark:text-white font-mono truncate",
+              isLandscape ? "text-xs" : "text-sm lg:text-base"
+            )}>
               {data.dayName}
             </span>
           </div>
-          <div className="flex items-center gap-1">
+
+          <div className="flex items-center gap-1 flex-shrink-0">
             {dayOffset !== 0 && (
               <button
                 onClick={() => {
@@ -364,11 +452,17 @@ export default function NextLessonCard({
                   userInteractedRef.current = false;
                   setCurrentLessonIndex(0);
                 }}
-                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors mr-1"
+                className={cn(
+                  "hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors",
+                  isLandscape ? "p-1" : "p-1.5"
+                )}
                 title="Torna a oggi"
                 type="button"
               >
-                <RotateCcw className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-gray-500 dark:text-gray-400" />
+                <RotateCcw className={cn(
+                  "text-gray-500 dark:text-gray-400",
+                  isLandscape ? "w-3 h-3" : "w-3.5 h-3.5 lg:w-4 lg:h-4"
+                )} />
               </button>
             )}
             <button
@@ -378,10 +472,16 @@ export default function NextLessonCard({
                 setCurrentLessonIndex(0);
               }}
               disabled={dayOffset === 0}
-              className="w-7 h-7 lg:w-8 lg:h-8 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 disabled:opacity-30 transition-colors"
+              className={cn(
+                "border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 disabled:opacity-30 transition-colors",
+                isLandscape ? "w-5 h-5" : "w-7 h-7 lg:w-8 lg:h-8"
+              )}
               type="button"
             >
-              <ChevronLeft className="w-3 h-3 lg:w-4 lg:h-4 text-gray-900 dark:text-white" />
+              <ChevronLeft className={cn(
+                "text-gray-900 dark:text-white",
+                isLandscape ? "w-2.5 h-2.5" : "w-3 h-3 lg:w-4 lg:h-4"
+              )} />
             </button>
 
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
@@ -389,8 +489,9 @@ export default function NextLessonCard({
                 <button
                   type="button"
                   className={cn(
-                    "text-xs lg:text-sm text-gray-900 dark:text-white font-mono px-2 min-w-12 lg:min-w-14 text-center hover:opacity-70 transition-opacity",
+                    "text-gray-900 dark:text-white font-mono text-center hover:opacity-70 transition-opacity px-2 min-w-10",
                     isCalendarOpen && "opacity-50",
+                    isLandscape ? "text-[10px]" : "text-xs lg:text-sm"
                   )}
                 >
                   {getDate(dayOffset)}
@@ -417,112 +518,190 @@ export default function NextLessonCard({
                 setDayOffset(dayOffset + 1);
                 setCurrentLessonIndex(0);
               }}
-              className="w-7 h-7 lg:w-8 lg:h-8 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 disabled:opacity-30 transition-colors"
+              className={cn(
+                "border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 disabled:opacity-30 transition-colors",
+                isLandscape ? "w-5 h-5" : "w-7 h-7 lg:w-8 lg:h-8"
+              )}
               type="button"
             >
-              <ChevronRight className="w-3 h-3 lg:w-4 lg:h-4 text-gray-900 dark:text-white" />
+              <ChevronRight className={cn(
+                "text-gray-900 dark:text-white",
+                isLandscape ? "w-2.5 h-2.5" : "w-3 h-3 lg:w-4 lg:h-4"
+              )} />
             </button>
           </div>
         </div>
       </div>
-      <div className="p-4 lg:p-6 flex flex-col justify-between">
-        <div className="h-8 lg:h-9 mb-2 flex items-start">
+
+      {/* Content area */}
+      <div className={cn(
+        "flex flex-col flex-1 overflow-y-auto",
+        isLandscape ? "p-2" : "p-4 lg:p-6"
+      )}>
+        {/* Badge status */}
+        <div className={cn(
+          "flex items-start",
+          isLandscape ? "h-auto mb-1.5" : "h-8 lg:h-9 mb-2"
+        )}>
           {(isCurrentLesson || isNextLesson) && (
             <div
-              className={`inline-flex items-center gap-2 px-2 py-1 rounded-lg text-xs lg:text-sm font-mono ${
+              className={cn(
+                "inline-flex items-center gap-1.5 px-2 py-1 rounded-lg font-mono whitespace-nowrap",
+                isLandscape ? "text-[9px]" : "text-xs lg:text-sm",
                 isCurrentLesson
                   ? "text-green-800 dark:text-white bg-green-500 bg-opacity-20 dark:bg-opacity-10 border border-green-700 dark:border-green-900"
                   : "text-blue-800 dark:text-white bg-blue-500 bg-opacity-20 dark:bg-opacity-10 border border-blue-700 dark:border-blue-900"
-              }`}
+              )}
             >
               <div
-                className={`w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full ${
+                className={cn(
+                  "rounded-full",
+                  isLandscape ? "w-1.5 h-1.5" : "w-1.5 h-1.5 lg:w-2 lg:h-2",
                   isCurrentLesson
                     ? "bg-green-600 dark:bg-green-400"
                     : "bg-blue-600 dark:bg-blue-400"
-                }`}
+                )}
               />
               {isCurrentLesson ? "in corso" : "prossima"}
             </div>
           )}
         </div>
 
-        <div className="flex flex-col justify-center">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 lg:w-5 lg:h-5 text-gray-900 dark:text-white" />
-              <span className="text-lg lg:text-xl text-gray-900 dark:text-white font-mono">
-                {currentLesson.time}
-              </span>
-            </div>
+        {/* Main lesson info */}
+        <div className="flex-1 flex flex-col justify-center">
+          {/* Time */}
+          <div className={cn(
+            "flex items-center gap-2",
+            isLandscape ? "mb-1.5" : "mb-4"
+          )}>
+            <Clock className={cn(
+              "text-gray-900 dark:text-white flex-shrink-0",
+              isLandscape ? "w-3.5 h-3.5" : "w-4 h-4 lg:w-5 lg:h-5"
+            )} />
+            <span className={cn(
+              "text-gray-900 dark:text-white font-mono whitespace-nowrap",
+              isLandscape ? "text-sm font-semibold" : "text-lg lg:text-xl"
+            )}>
+              {currentLesson.time}
+            </span>
           </div>
 
-          <h3 className="text-gray-900 dark:text-white text-base lg:text-lg font-light mb-4 leading-tight font-serif">
+          {/* Subject name */}
+          <h3 className={cn(
+            "text-gray-900 dark:text-white font-light leading-tight font-serif",
+            isLandscape ? "text-xs mb-2 line-clamp-1" : "text-base lg:text-lg mb-4"
+          )}>
             {parsedLesson.materia.toLowerCase()}
           </h3>
 
-          <div className="space-y-3">
+          {/* Details in a compact row for landscape */}
+          <div className={cn(
+            isLandscape
+              ? "flex flex-wrap gap-x-3 gap-y-1"
+              : "space-y-3"
+          )}>
             {parsedLesson.aula && (
-              <div className="flex items-center gap-2">
-                <MapPin className="w-3 h-3 lg:w-4 lg:h-4 text-gray-900 dark:text-white" />
-                <span className="text-xs lg:text-sm text-gray-900 dark:text-white font-mono">
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <MapPin className={cn(
+                  "text-gray-900 dark:text-white flex-shrink-0",
+                  isLandscape ? "w-2.5 h-2.5" : "w-3 h-3 lg:w-4 lg:h-4"
+                )} />
+                <span className={cn(
+                  "text-gray-900 dark:text-white font-mono",
+                  isLandscape ? "text-[9px] truncate max-w-[100px]" : "text-xs lg:text-sm"
+                )}>
                   {parsedLesson.aula.toLowerCase()}
                 </span>
               </div>
             )}
             {parsedLesson.docente && (
-              <div className="flex items-center gap-2">
-                <User className="w-3 h-3 lg:w-4 lg:h-4 text-gray-900 dark:text-white" />
-                <span className="text-xs lg:text-sm text-gray-900 dark:text-white font-mono">
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <User className={cn(
+                  "text-gray-900 dark:text-white flex-shrink-0",
+                  isLandscape ? "w-2.5 h-2.5" : "w-3 h-3 lg:w-4 lg:h-4"
+                )} />
+                <span className={cn(
+                  "text-gray-900 dark:text-white font-mono",
+                  isLandscape ? "text-[9px] truncate max-w-[100px]" : "text-xs lg:text-sm"
+                )}>
                   {parsedLesson.docente.toLowerCase()}
                 </span>
               </div>
             )}
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 lg:w-4 lg:h-4 border border-gray-900 dark:border-white rounded-sm flex items-center justify-center">
-                <div className="w-1 h-1 lg:w-1.5 lg:h-1.5 bg-gray-900 dark:bg-white rounded-full" />
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <div className={cn(
+                "border border-gray-900 dark:border-white rounded-sm flex items-center justify-center flex-shrink-0",
+                isLandscape ? "w-2.5 h-2.5" : "w-3 h-3 lg:w-4 lg:h-4"
+              )}>
+                <div className={cn(
+                  "bg-gray-900 dark:bg-white rounded-full",
+                  isLandscape ? "w-0.5 h-0.5" : "w-1 h-1 lg:w-1.5 lg:h-1.5"
+                )} />
               </div>
-              <span className="text-xs lg:text-sm text-gray-900 dark:text-white font-mono">
+              <span className={cn(
+                "text-gray-900 dark:text-white font-mono whitespace-nowrap",
+                isLandscape ? "text-[9px]" : "text-xs lg:text-sm"
+              )}>
                 {parsedLesson.tipo.toLowerCase()}
               </span>
             </div>
           </div>
         </div>
-        <div className="h-10 lg:h-12 pt-4 border-t border-gray-200 dark:border-gray-900 flex items-center justify-between">
-          <span className="text-xs lg:text-sm text-gray-900 dark:text-white font-mono">
-            {displayedLessons.length > 1
-              ? `${displayIndex + 1} / ${displayedLessons.length}`
-              : "1 / 1"}
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => {
-                userInteractedRef.current = true;
-                setCurrentLessonIndex(Math.max(currentLessonIndex - 1, 0));
-              }}
-              disabled={displayIndex === 0 || displayedLessons.length <= 1}
-              className="w-6 h-6 lg:w-7 lg:h-7 border border-gray-900 dark:border-white rounded-sm flex items-center justify-center hover:border-gray-900 dark:hover:border-white disabled:opacity-30 transition-colors"
-              type="button"
-            >
-              <ChevronLeft className="w-2.5 h-2.5 lg:w-3 lg:h-3 text-gray-900 dark:text-white" />
-            </button>
-            <button
-              onClick={() => {
-                userInteractedRef.current = true;
-                setCurrentLessonIndex(
-                  Math.min(currentLessonIndex + 1, displayedLessons.length - 1),
-                );
-              }}
-              disabled={
-                displayIndex === displayedLessons.length - 1 ||
-                displayedLessons.length <= 1
-              }
-              className="w-6 h-6 lg:w-7 lg:h-7 border border-gray-900 dark:border-white rounded-sm flex items-center justify-center hover:border-gray-900 dark:hover:border-white disabled:opacity-30 transition-colors"
-              type="button"
-            >
-              <ChevronRight className="w-2.5 h-2.5 lg:w-3 lg:h-3 text-gray-900 dark:text-white" />
-            </button>
-          </div>
+      </div>
+
+      {/* Footer with navigation */}
+      <div className={cn(
+        "border-t border-gray-200 dark:border-gray-900 flex items-center justify-between flex-shrink-0",
+        isLandscape ? "px-2 py-1.5" : "px-4 py-3 lg:px-6 lg:py-4"
+      )}>
+        <span className={cn(
+          "text-gray-900 dark:text-white font-mono",
+          isLandscape ? "text-[9px]" : "text-xs lg:text-sm"
+        )}>
+          {displayedLessons.length > 1
+            ? `${displayIndex + 1}/${displayedLessons.length}`
+            : "1/1"}
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => {
+              userInteractedRef.current = true;
+              setCurrentLessonIndex(Math.max(currentLessonIndex - 1, 0));
+            }}
+            disabled={displayIndex === 0 || displayedLessons.length <= 1}
+            className={cn(
+              "border border-gray-900 dark:border-white rounded-sm flex items-center justify-center hover:border-gray-900 dark:hover:border-white disabled:opacity-30 transition-colors",
+              isLandscape ? "w-4 h-4" : "w-6 h-6 lg:w-7 lg:h-7"
+            )}
+            type="button"
+          >
+            <ChevronLeft className={cn(
+              "text-gray-900 dark:text-white",
+              isLandscape ? "w-2 h-2" : "w-2.5 h-2.5 lg:w-3 lg:h-3"
+            )} />
+          </button>
+          <button
+            onClick={() => {
+              userInteractedRef.current = true;
+              setCurrentLessonIndex(
+                Math.min(currentLessonIndex + 1, displayedLessons.length - 1),
+              );
+            }}
+            disabled={
+              displayIndex === displayedLessons.length - 1 ||
+              displayedLessons.length <= 1
+            }
+            className={cn(
+              "border border-gray-900 dark:border-white rounded-sm flex items-center justify-center hover:border-gray-900 dark:hover:border-white disabled:opacity-30 transition-colors",
+              isLandscape ? "w-4 h-4" : "w-6 h-6 lg:w-7 lg:h-7"
+            )}
+            type="button"
+          >
+            <ChevronRight className={cn(
+              "text-gray-900 dark:text-white",
+              isLandscape ? "w-2 h-2" : "w-2.5 h-2.5 lg:w-3 lg:h-3"
+            )} />
+          </button>
         </div>
       </div>
     </div>
