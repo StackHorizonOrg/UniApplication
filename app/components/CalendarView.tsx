@@ -114,7 +114,13 @@ export function CalendarView({
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       const selected = DateTime.fromJSDate(date).setZone("Europe/Rome");
-      const diffInDays = Math.floor(selected.diff(today, "days").days);
+      const selectedDayOfWeek = getDayOfWeek(selected);
+      const selectedStartOfWeek = selected.minus({ days: selectedDayOfWeek });
+
+      const todayDayOfWeek = getDayOfWeek(today);
+      const todayStartOfWeek = today.minus({ days: todayDayOfWeek });
+
+      const diffInDays = Math.floor(selectedStartOfWeek.diff(todayStartOfWeek, "days").days);
       onSetOffset(diffInDays);
       setIsCalendarOpen(false);
     }
