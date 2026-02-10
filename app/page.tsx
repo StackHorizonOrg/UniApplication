@@ -1,34 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { Settings } from "lucide-react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { useLocalStorage } from "@/lib/hooks";
 import { parseOrarioData } from "@/lib/orario-utils";
 import { CalendarView } from "./components/CalendarView";
 import NextLessonCard from "./components/NextLessonCard";
+import { SettingsDialog } from "./components/SettingsDialog";
 import { ThemeToggle } from "./components/ThemeToggle";
 
 export default function Home() {
   const [weekOffset, setWeekOffset] = useState(0);
+  const [calendarId] = useLocalStorage<string>("calendarId", "");
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient && !calendarId) {
+      setIsSettingsOpen(true);
+    }
+  }, [isClient, calendarId]);
 
   const {
     data: orario,
     isLoading,
     error,
-  } = api.orario.getOrario.useQuery({ 
-    name: "INFORMATICA",
-    location: "Varese",
-    dayOffset: weekOffset 
-  }, {
-    keepPreviousData: true // Keep showing old data while fetching new week
-  });
+  } = api.orario.getOrario.useQuery(
+    {
+      name: "INFORMATICA",
+      location: "Varese",
+      dayOffset: weekOffset,
+      linkId: calendarId,
+    },
+    {
+      placeholderData: (previousData) => previousData,
+      enabled: !!calendarId,
+    },
+  );
 
   const schedule = orario ? parseOrarioData(orario) : [];
 
-  const handleNextWeek = () => setWeekOffset(prev => prev + 7);
-  const handlePrevWeek = () => setWeekOffset(prev => prev - 7);
+  const handleNextWeek = () => setWeekOffset((prev) => prev + 7);
+  const handlePrevWeek = () => setWeekOffset((prev) => prev - 7);
   const handleReset = () => setWeekOffset(0);
 
-  if (isLoading && !orario) {
+  if (!isClient) {
+    return null;
+  }
+
+  if (isLoading && !orario && calendarId) {
     return (
       <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
         <div className="text-center">
@@ -38,11 +63,16 @@ export default function Home() {
           </p>
         </div>
         <ThemeToggle />
+        <SettingsDialog
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          forceOpen={!calendarId}
+        />
       </div>
     );
   }
 
-  if (error) {
+  if (error && calendarId) {
     return (
       <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
         <div className="text-center">
@@ -66,8 +96,20 @@ export default function Home() {
             Errore nel caricamento
           </p>
           <p className="text-gray-500 text-xs">{error.message}</p>
+          <button
+            type="button"
+            onClick={() => setIsSettingsOpen(true)}
+            className="mt-4 text-xs underline text-gray-500 hover:text-gray-900 dark:hover:text-gray-300"
+          >
+            Controlla impostazioni
+          </button>
         </div>
         <ThemeToggle />
+        <SettingsDialog
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          forceOpen={!calendarId}
+        />
       </div>
     );
   }
@@ -75,41 +117,59 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-white flex flex-col">
       <main className="w-full px-4 py-4 space-y-6 flex-1">
-        <h1 className="text-4xl font-semibold mb-4 text-gray-900 dark:text-white font-serif">
-          Orario Insubria
-        </h1>
-        
-        {/* Only show Next Lesson if we are looking at the current week/future, 
-            or just always show it? Usually Next Lesson is relative to "NOW". 
-            But if I navigate to next year, "Next Lesson" card might seem redundant 
-            or should it stick to "Real Time Next Lesson"? 
-            Let's keep it real-time (unaffected by navigation) for now. 
-            Wait, I need to check if NextLessonCard uses 'schedule' prop.
-            Yes it does. So if I navigate to next week, NextLessonCard will 
-            try to find the next lesson in *that* week.
-            That might be what the user wants: "What is the first lesson of that week?"
-            Or they might want "What is my next lesson right now?".
-            Usually "Next Lesson" implies relative to wall-clock time. 
-            If I pass next week's schedule, it might show Monday's lesson. 
-            That's acceptable behavior.
-        */}
-        <section>
-          <NextLessonCard schedule={schedule} />
-        </section>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-4xl font-semibold text-gray-900 dark:text-white font-serif">
+            Orario Insubria
+          </h1>
+          <button
+            type="button"
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-2 text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        </div>
 
-        <section>
-          <CalendarView 
-            schedule={schedule} 
-            weekOffset={weekOffset}
-            onNextWeek={handleNextWeek}
-            onPrevWeek={handlePrevWeek}
-            onReset={handleReset}
-            onSetOffset={setWeekOffset}
-          />
-        </section>
+        {calendarId ? (
+          <>
+            <section>
+              <NextLessonCard schedule={schedule} />
+            </section>
+
+            <section>
+              <CalendarView
+                schedule={schedule}
+                weekOffset={weekOffset}
+                onNextWeek={handleNextWeek}
+                onPrevWeek={handlePrevWeek}
+                onReset={handleReset}
+                onSetOffset={setWeekOffset}
+              />
+            </section>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-4">
+            <p className="text-gray-500 dark:text-gray-400">
+              Nessun calendario configurato.
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsSettingsOpen(true)}
+              className="bg-black dark:bg-white text-white dark:text-black px-6 py-2 rounded-lg text-sm font-medium"
+            >
+              Configura Ora
+            </button>
+          </div>
+        )}
       </main>
 
       <ThemeToggle />
+
+      <SettingsDialog
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        forceOpen={!calendarId}
+      />
     </div>
   );
 }

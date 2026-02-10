@@ -13,7 +13,6 @@ export function ThemeToggle() {
   }, []);
 
   useEffect(() => {
-    // Controlla il tema salvato o le preferenze di sistema
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
     const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
       .matches

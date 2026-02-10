@@ -1,18 +1,26 @@
+import { it } from "date-fns/locale";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
+import { ChevronLeft, ChevronRight, Eye, EyeOff, Filter } from "lucide-react";
+import { DateTime } from "luxon";
 import { useState } from "react";
 import { CalendarDayDialog } from "@/app/components/CalendarDayDialog";
-import { getCurrentItalianDateTime, getDayOfWeek, addDays } from "@/lib/date-utils";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  addDays,
+  getCurrentItalianDateTime,
+  getDayOfWeek,
+} from "@/lib/date-utils";
+import { useLocalStorage } from "@/lib/hooks";
 import type { DaySchedule, ParsedEvent } from "@/lib/orario-utils";
 import { getMateriaColorMap } from "@/lib/orario-utils";
-import { DateTime } from "luxon";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { it } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Eye, EyeOff, Filter } from "lucide-react";
-import { useLocalStorage } from "@/lib/hooks";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -26,17 +34,22 @@ interface CalendarViewProps {
   onSetOffset: (offset: number) => void;
 }
 
-export function CalendarView({ 
-  schedule, 
-  weekOffset, 
-  onNextWeek, 
-  onPrevWeek, 
+const INITIAL_HIDDEN_SUBJECTS: string[] = [];
+
+export function CalendarView({
+  schedule,
+  weekOffset,
+  onNextWeek,
+  onPrevWeek,
   onReset,
-  onSetOffset
+  onSetOffset,
 }: CalendarViewProps) {
   const [selectedDay, setSelectedDay] = useState<DaySchedule | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [hiddenSubjects, setHiddenSubjects] = useLocalStorage<string[]>("hiddenSubjects", []);
+  const [hiddenSubjects, setHiddenSubjects] = useLocalStorage<string[]>(
+    "hiddenSubjects",
+    INITIAL_HIDDEN_SUBJECTS,
+  );
 
   const allMaterie = schedule.flatMap((day) =>
     day.events.map((ev) => ev.materia),
@@ -44,24 +57,23 @@ export function CalendarView({
   const materiaColorMap = getMateriaColorMap(allMaterie);
 
   const toggleSubject = (materia: string) => {
-    setHiddenSubjects((prev) => 
-      prev.includes(materia) 
+    setHiddenSubjects((prev) =>
+      prev.includes(materia)
         ? prev.filter((s) => s !== materia)
-        : [...prev, materia]
+        : [...prev, materia],
     );
   };
 
   const today = getCurrentItalianDateTime();
   const baseDate = addDays(today, weekOffset);
-  
+
   const currentDayOfWeek = getDayOfWeek(baseDate);
   const startOfWeek = baseDate.minus({ days: currentDayOfWeek });
   const endOfWeek = startOfWeek.plus({ days: 6 });
 
-  // Formatta il range della settimana in italiano
   const startDay = startOfWeek.toFormat("d");
   const endDay = endOfWeek.toFormat("d");
-  const monthYear = endOfWeek.setLocale('it').toFormat("MMMM yyyy");
+  const monthYear = endOfWeek.setLocale("it").toFormat("MMMM yyyy");
   const weekRangeDisplay = `${startDay} - ${endDay} ${monthYear}`;
 
   const weekDays = Array.from({ length: 7 }, (_, index) => {
@@ -72,7 +84,9 @@ export function CalendarView({
     const dayData = schedule.find((s) => s.day === dayOfWeek);
 
     const nonCancelledEvents = (dayData?.events || []).filter(
-      (ev) => !ev.time?.toUpperCase().includes("ANNULLATO") && !hiddenSubjects.includes(ev.materia),
+      (ev) =>
+        !ev.time?.toUpperCase().includes("ANNULLATO") &&
+        !hiddenSubjects.includes(ev.materia),
     );
 
     return {
@@ -99,10 +113,10 @@ export function CalendarView({
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
-        const selected = DateTime.fromJSDate(date).setZone("Europe/Rome");
-        const diffInDays = Math.floor(selected.diff(today, 'days').days);
-        onSetOffset(diffInDays);
-        setIsCalendarOpen(false);
+      const selected = DateTime.fromJSDate(date).setZone("Europe/Rome");
+      const diffInDays = Math.floor(selected.diff(today, "days").days);
+      onSetOffset(diffInDays);
+      setIsCalendarOpen(false);
     }
   };
 
@@ -119,29 +133,34 @@ export function CalendarView({
   return (
     <>
       <div className="w-full max-w-md mx-auto bg-white dark:bg-black text-gray-900 dark:text-white border-none">
-        
-        {/* Header with Navigation and Shadcn DatePicker */}
+        {}
         <div className="p-4 flex items-center justify-between border-b border-dashed border-gray-300 dark:border-gray-800">
-          <button 
+          <button
+            type="button"
             onClick={onPrevWeek}
             className="w-7 h-7 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors disabled:opacity-30"
           >
+            {" "}
             <ChevronLeft className="w-4 h-4 text-gray-900 dark:text-white" />
           </button>
 
           <div className="text-center relative flex flex-col items-center">
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
               <PopoverTrigger asChild>
-                <button 
+                <button
+                  type="button"
                   className={cn(
                     "text-sm font-mono uppercase tracking-widest hover:opacity-70 transition-opacity border-b border-transparent hover:border-black dark:hover:border-white pb-0.5",
-                    isCalendarOpen && "opacity-50"
+                    isCalendarOpen && "opacity-50",
                   )}
                 >
                   {weekRangeDisplay}
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-none shadow-none" align="center">
+              <PopoverContent
+                className="w-auto p-0 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-none shadow-none"
+                align="center"
+              >
                 <Calendar
                   mode="single"
                   selected={baseDate.toJSDate()}
@@ -154,19 +173,23 @@ export function CalendarView({
             </Popover>
 
             {weekOffset !== 0 && (
-              <button 
+              <button
+                type="button"
                 onClick={onReset}
                 className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-mono mt-1 border-b border-gray-300 dark:border-gray-700 hover:text-black dark:hover:text-white transition-colors"
               >
+                {" "}
                 Torna a oggi
               </button>
             )}
           </div>
 
-          <button 
+          <button
+            type="button"
             onClick={onNextWeek}
             className="w-7 h-7 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors disabled:opacity-30"
           >
+            {" "}
             <ChevronRight className="w-4 h-4 text-gray-900 dark:text-white" />
           </button>
         </div>
@@ -232,65 +255,72 @@ export function CalendarView({
         <div className="px-4 pb-6">
           <div className="space-y-3">
             <div className="flex items-center justify-between border-b border-dashed border-gray-200 dark:border-gray-800 pb-2">
-               <h3 className="text-[10px] font-mono text-gray-400 dark:text-gray-600 uppercase tracking-widest flex items-center gap-2">
-                 <Filter className="w-3 h-3" />
-                 Filtra Materie
-               </h3>
-               {hiddenSubjects.length > 0 && (
-                   <span className="text-[10px] text-gray-400 dark:text-gray-600 font-mono">
-                       {hiddenSubjects.length} nascoste
-                   </span>
-               )}
+              <h3 className="text-[10px] font-mono text-gray-400 dark:text-gray-600 uppercase tracking-widest flex items-center gap-2">
+                <Filter className="w-3 h-3" />
+                Filtra Materie
+              </h3>
+              {hiddenSubjects.length > 0 && (
+                <span className="text-[10px] text-gray-400 dark:text-gray-600 font-mono">
+                  {hiddenSubjects.length} nascoste
+                </span>
+              )}
             </div>
-            
+
             <div className="grid grid-cols-1 gap-2">
-                {Array.from(
-                  new Set(schedule.flatMap((s) => s.events.map((e) => e.materia))),
-                ).sort().map((materia) => {
+              {Array.from(
+                new Set(
+                  schedule.flatMap((s) => s.events.map((e) => e.materia)),
+                ),
+              )
+                .sort()
+                .map((materia) => {
                   const isHidden = hiddenSubjects.includes(materia);
                   const color = getMateriaColor(materia);
-                  
+
                   return (
-                      <button 
-                        key={materia} 
-                        onClick={() => toggleSubject(materia)}
+                    <button
+                      type="button"
+                      key={materia}
+                      onClick={() => toggleSubject(materia)}
+                      className={cn(
+                        "flex items-center gap-3 w-full text-left group py-1 px-1 rounded-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-900",
+                        isHidden && "opacity-50 grayscale",
+                      )}
+                    >
+                      <div className="relative">
+                        <div
+                          className={cn(
+                            "w-3 h-3 rounded-full flex-shrink-0 transition-transform",
+                            isHidden && "scale-75",
+                          )}
+                          style={{ backgroundColor: color }}
+                        />
+                        {isHidden && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-full h-px bg-white/80 -rotate-45" />
+                          </div>
+                        )}
+                      </div>
+
+                      <span
                         className={cn(
-                            "flex items-center gap-3 w-full text-left group py-1 px-1 rounded-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-900",
-                            isHidden && "opacity-50 grayscale"
+                          "text-xs font-mono truncate uppercase tracking-tight flex-1 transition-colors",
+                          isHidden
+                            ? "text-gray-400 dark:text-gray-600 line-through decoration-gray-400/50"
+                            : "text-gray-800 dark:text-gray-200 group-hover:text-black dark:group-hover:text-white",
                         )}
                       >
-                        <div className="relative">
-                            <div
-                              className={cn(
-                                  "w-3 h-3 rounded-full flex-shrink-0 transition-transform",
-                                  isHidden && "scale-75"
-                              )}
-                              style={{ backgroundColor: color }}
-                            />
-                            {isHidden && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-full h-px bg-white/80 -rotate-45" />
-                                </div>
-                            )}
-                        </div>
-                        
-                        <span className={cn(
-                            "text-xs font-mono truncate uppercase tracking-tight flex-1 transition-colors",
-                            isHidden 
-                                ? "text-gray-400 dark:text-gray-600 line-through decoration-gray-400/50" 
-                                : "text-gray-800 dark:text-gray-200 group-hover:text-black dark:group-hover:text-white"
-                        )}>
-                          {materia.toLowerCase()}
-                        </span>
+                        {materia.toLowerCase()}
+                      </span>
 
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            {isHidden ? (
-                                <EyeOff className="w-3 h-3 text-gray-400" />
-                            ) : (
-                                <Eye className="w-3 h-3 text-gray-400" />
-                            )}
-                        </div>
-                      </button>
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        {isHidden ? (
+                          <EyeOff className="w-3 h-3 text-gray-400" />
+                        ) : (
+                          <Eye className="w-3 h-3 text-gray-400" />
+                        )}
+                      </div>
+                    </button>
                   );
                 })}
             </div>

@@ -31,7 +31,6 @@ export function parseEventTitle(title: string): {
   docente: string;
   tipo: string;
 } {
-  // Fallback parsing if backend doesn't provide fields
   const aulaMatch = title.match(/^(.+?)Aula/);
   const materia = aulaMatch ? aulaMatch[1].trim() : title;
   const aulaFullMatch = title.match(/Aula\s+(.+?)(?=\s+[A-Z]\.\s+[A-Z]+)/);
@@ -50,32 +49,48 @@ export function parseEventTitle(title: string): {
   return { materia, aula, docente, tipo };
 }
 
+export function extractCalendarId(url: string): string | null {
+  try {
+    const urlObj = new URL(url);
+    const paramId = urlObj.searchParams.get("linkCalendarioId");
+    if (paramId) return paramId;
+
+    const pathMatch = url.match(/linkCalendarioId=([a-f0-9]{24})/i);
+    if (pathMatch) return pathMatch[1];
+
+    return null;
+  } catch {
+    const directIdMatch = url.match(/\b([a-f0-9]{24})\b/i);
+    if (directIdMatch) return directIdMatch[1];
+
+    return null;
+  }
+}
+
 export function parseOrarioData(
-  rawData: { 
-    day: number; 
-    events: { 
-      time: string; 
-      title: string; 
-      location?: string; 
-      professor?: string 
-    }[] 
+  rawData: {
+    day: number;
+    events: {
+      time: string;
+      title: string;
+      location?: string;
+      professor?: string;
+    }[];
   }[],
 ): DaySchedule[] {
   return rawData.map((day) => ({
     day: day.day,
     events: day.events.map((event) => {
-      // Use backend provided fields if available
       if (event.location !== undefined || event.professor !== undefined) {
         return {
-            time: event.time,
-            materia: event.title,
-            aula: event.location || "",
-            docente: event.professor || "",
-            tipo: event.title.includes("Laboratorio") ? "Laboratorio" : "Lezione"
+          time: event.time,
+          materia: event.title,
+          aula: event.location || "",
+          docente: event.professor || "",
+          tipo: event.title.includes("Laboratorio") ? "Laboratorio" : "Lezione",
         };
       }
-      
-      // Fallback to legacy parsing
+
       const parsed = parseEventTitle(event.title);
       return {
         time: event.time,
@@ -86,20 +101,20 @@ export function parseOrarioData(
 }
 
 const COLOR_PALETTE = [
-  "#00D4FF", // azzurro
-  "#FF3366", // rosa
-  "#00FF88", // verde
-  "#FFAA00", // arancione
-  "#A259FF", // viola
-  "#FF6F00", // arancio scuro
-  "#FFB300", // giallo
-  "#009688", // teal
-  "#C51162", // magenta
-  "#1976D2", // blu
-  "#43A047", // verde scuro
-  "#F44336", // rosso
-  "#8D6E63", // marrone
-  "#607D8B", // grigio blu
+  "#00D4FF",
+  "#FF3366",
+  "#00FF88",
+  "#FFAA00",
+  "#A259FF",
+  "#FF6F00",
+  "#FFB300",
+  "#009688",
+  "#C51162",
+  "#1976D2",
+  "#43A047",
+  "#F44336",
+  "#8D6E63",
+  "#607D8B",
 ];
 
 export function getMateriaColorMap(materie: string[]): Record<string, string> {

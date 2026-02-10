@@ -13,14 +13,13 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // Cache i dati per 30 minuti
             staleTime: 1000 * 60 * 30,
-            // Mantieni i dati in cache per 1 ora
+
             gcTime: 1000 * 60 * 60,
-            // Riutilizza i dati mentre ricarica in background
+
             refetchOnWindowFocus: false,
             refetchOnMount: false,
-            // Riprova in caso di errore
+
             retry: 2,
             retryDelay: 1000,
           },
