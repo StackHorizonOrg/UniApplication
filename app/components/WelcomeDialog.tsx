@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Sparkles, Zap, Globe, MessageSquare } from "lucide-react";
+import { ChevronRight, Sparkles, Zap, Globe, MessageSquare, Smartphone } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface WelcomeDialogProps {
@@ -32,6 +32,14 @@ const slides = [
     description:
       "Addio scraping lento! Ora utilizziamo le API ufficiali per un caricamento istantaneo dell'orario.",
     color: "bg-yellow-500",
+  },
+  {
+    id: "pwa",
+    icon: Smartphone,
+    title: "Installala come App",
+    description:
+      "Installa UniOrario sul tuo dispositivo come un'app nativa! Su mobile, tocca il menu del browser e seleziona 'Aggiungi a schermata Home'. Su desktop, cerca l'icona di installazione nella barra degli indirizzi.",
+    color: "bg-indigo-500",
   },
   {
     id: "feedback",
