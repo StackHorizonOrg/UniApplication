@@ -25,6 +25,13 @@ import { cn } from "@/lib/utils";
 
 const INITIAL_HIDDEN_SUBJECTS: string[] = [];
 
+type Lesson = {
+  time: string;
+  title: string;
+  location?: string;
+  professor?: string;
+};
+
 export default function NextLessonCard({
   schedule: _schedule,
 }: {
@@ -56,8 +63,9 @@ export default function NextLessonCard({
     () =>
       lessons.filter((l) => {
         const isAnnullato = l.time?.toUpperCase().includes("ANNULLATO");
-        const parsed = parseEventTitle(l.title);
-        const isHidden = hiddenSubjects.includes(parsed.materia);
+        // Use title as materia (subject name)
+        const materia = l.title;
+        const isHidden = hiddenSubjects.includes(materia);
         return !isAnnullato && !isHidden;
       }),
     [lessons, hiddenSubjects],
@@ -320,8 +328,16 @@ export default function NextLessonCard({
     0,
     Math.min(currentLessonIndex, displayedLessons.length - 1),
   );
-  const currentLesson = displayedLessons[displayIndex];
-  const parsedLesson = parseEventTitle(currentLesson.title);
+  const currentLesson = displayedLessons[displayIndex] as Lesson;
+
+  // Use location and professor fields directly if available, otherwise parse from title
+  const parsedFromTitle = parseEventTitle(currentLesson.title);
+  const parsedLesson = {
+    materia: currentLesson.title,
+    aula: currentLesson.location || parsedFromTitle.aula,
+    docente: currentLesson.professor || parsedFromTitle.docente,
+    tipo: parsedFromTitle.tipo,
+  };
 
   const isCurrentLesson =
     data.nextLesson?.status === "current" &&

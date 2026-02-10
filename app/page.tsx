@@ -1,6 +1,7 @@
 "use client";
 
 import { Settings } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useLocalStorage } from "@/lib/hooks";
@@ -14,6 +15,7 @@ import { ThemeToggle } from "./components/ThemeToggle";
 import { WelcomeDialog } from "./components/WelcomeDialog";
 
 export default function Home() {
+  const router = useRouter();
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDay, setSelectedDay] = useState<DaySchedule | null>(null);
   const [calendarId] = useLocalStorage<string>("calendarId", "");
@@ -153,7 +155,11 @@ export default function Home() {
       <main className="w-full px-4 py-4 lg:px-8 lg:py-6 flex-1 max-w-400 mx-auto flex flex-col overflow-hidden">
         <div className="flex items-center justify-between mb-4 lg:mb-6 flex-shrink-0">
           <div>
-            <h1 className="text-4xl lg:text-5xl font-semibold text-gray-900 dark:text-white font-serif">
+            <h1
+              className="text-4xl lg:text-5xl font-semibold text-gray-900 dark:text-white font-serif cursor-default select-none"
+              onDoubleClick={() => router.push("/admin")}
+              title="Doppio click per accedere all'admin"
+            >
               Orario Insubria
             </h1>
             {courseName && (

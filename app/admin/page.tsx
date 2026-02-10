@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ArrowLeft,
   Calendar,
   Check,
   CheckCircle2,
@@ -244,6 +245,15 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center p-4">
         <div className="w-full max-w-md">
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-6 group"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm">Torna alla Home</span>
+          </button>
+
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-8 shadow-sm">
             <div className="flex items-center justify-center mb-6">
               <Shield className="h-12 w-12 text-gray-900 dark:text-white" />
