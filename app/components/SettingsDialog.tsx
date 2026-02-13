@@ -216,11 +216,13 @@ export function SettingsDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 portrait:p-4">
-      <div className={cn(
-        "w-full bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-2xl flex flex-col",
-        "portrait:max-w-lg portrait:max-h-[90vh]",
-        "landscape:max-w-[75vw] landscape:max-h-[85vh]"
-      )}>
+      <div
+        className={cn(
+          "w-full bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-2xl flex flex-col",
+          "portrait:max-w-lg portrait:max-h-[90vh]",
+          "landscape:max-w-[75vw] landscape:max-h-[85vh]",
+        )}
+      >
         <div className="px-3 py-2 portrait:p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <div>
             <h2 className="text-base portrait:text-xl font-bold text-gray-900 dark:text-white font-serif">

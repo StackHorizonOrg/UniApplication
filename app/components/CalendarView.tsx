@@ -2,7 +2,15 @@ import { it } from "date-fns/locale";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
-import { ChevronLeft, ChevronRight, Eye, EyeOff, Filter } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Filter,
+} from "lucide-react";
 import { DateTime } from "luxon";
 import { useState } from "react";
 import { CalendarDayDialog } from "@/app/components/CalendarDayDialog";
@@ -56,6 +64,33 @@ export function CalendarView({
     "hiddenSubjects",
     INITIAL_HIDDEN_SUBJECTS,
   );
+
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe) {
+      onNextWeek();
+    }
+    if (isRightSwipe) {
+      onPrevWeek();
+    }
+  };
 
   const allMaterie = schedule.flatMap((day) =>
     day.events.map((ev) => ev.materia),
@@ -146,14 +181,19 @@ export function CalendarView({
 
   return (
     <>
-      <div className="w-full h-full bg-white dark:bg-black text-gray-900 dark:text-white border-none flex flex-col overflow-hidden">
+      <div
+        className="w-full h-full bg-white dark:bg-black text-gray-900 dark:text-white border-none flex flex-col overflow-hidden"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         <div className="px-3 py-2 portrait:p-4 flex items-center justify-between border-b border-dashed border-gray-300 dark:border-gray-800 flex-shrink-0">
           <button
             type="button"
             onClick={onPrevWeek}
-            className="w-6 h-6 portrait:w-7 portrait:h-7 lg:w-9 lg:h-9 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors disabled:opacity-30"
+            className="w-8 h-8 lg:w-9 lg:h-9 border border-gray-200 dark:border-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors disabled:opacity-30"
           >
-            <ChevronLeft className="w-3 h-3 portrait:w-4 portrait:h-4 lg:w-5 lg:h-5 text-gray-900 dark:text-white" />
+            <ChevronLeft className="w-4 h-4 lg:w-5 lg:h-5 text-gray-900 dark:text-white" />
           </button>
 
           <div className="text-center relative flex flex-col items-center min-w-0 flex-1 mx-2">
@@ -162,15 +202,19 @@ export function CalendarView({
                 <button
                   type="button"
                   className={cn(
-                    "text-xs portrait:text-sm lg:text-base font-mono uppercase tracking-wider portrait:tracking-widest hover:opacity-70 transition-opacity border-b border-transparent hover:border-black dark:hover:border-white pb-0.5 truncate max-w-full",
-                    isCalendarOpen && "opacity-50",
+                    "flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all border border-transparent hover:border-gray-200 dark:hover:border-gray-700",
+                    "text-xs portrait:text-sm lg:text-base font-mono uppercase tracking-wider portrait:tracking-widest truncate max-w-full",
+                    isCalendarOpen &&
+                      "opacity-50 ring-2 ring-black dark:ring-white",
                   )}
                 >
-                  {weekRangeDisplay}
+                  <CalendarIcon className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="truncate">{weekRangeDisplay}</span>
+                  <ChevronDown className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-gray-500 dark:text-gray-400" />
                 </button>
               </PopoverTrigger>
               <PopoverContent
-                className="w-auto p-0 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-none shadow-none"
+                className="w-auto p-0 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl"
                 align="center"
               >
                 <Calendar
@@ -188,7 +232,7 @@ export function CalendarView({
               <button
                 type="button"
                 onClick={onReset}
-                className="text-[9px] portrait:text-[10px] lg:text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-mono mt-0.5 portrait:mt-1 border-b border-gray-300 dark:border-gray-700 hover:text-black dark:hover:text-white transition-colors"
+                className="text-[9px] portrait:text-[10px] lg:text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 font-mono mt-1 hover:text-black dark:hover:text-white transition-colors"
               >
                 Torna a oggi
               </button>
@@ -198,17 +242,17 @@ export function CalendarView({
           <button
             type="button"
             onClick={onNextWeek}
-            className="w-6 h-6 portrait:w-7 portrait:h-7 lg:w-9 lg:h-9 border border-gray-900 dark:border-white rounded-md flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors disabled:opacity-30"
+            className="w-8 h-8 lg:w-9 lg:h-9 border border-gray-200 dark:border-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors disabled:opacity-30"
           >
-            <ChevronRight className="w-3 h-3 portrait:w-4 portrait:h-4 lg:w-5 lg:h-5 text-gray-900 dark:text-white" />
+            <ChevronRight className="w-4 h-4 lg:w-5 lg:h-5 text-gray-900 dark:text-white" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
           <div className="p-2 portrait:p-4 lg:p-6">
-            <div className="grid grid-cols-7 gap-0.5 portrait:gap-1 lg:gap-2">
+            <div className="grid grid-cols-7 gap-1 portrait:gap-1.5 lg:gap-2">
               {weekDayHeaders.map((day) => (
-                <div key={day.name} className="text-center py-1 portrait:py-3">
+                <div key={day.name} className="text-center py-1 portrait:py-2">
                   <span className="text-[10px] portrait:text-xs lg:text-sm font-mono text-gray-400 dark:text-gray-600">
                     {day.label}
                   </span>
@@ -235,21 +279,21 @@ export function CalendarView({
                       }
                     }}
                     className={`
-                      relative aspect-square flex flex-col items-center justify-center rounded-sm
+                      relative aspect-square flex flex-col items-center justify-center rounded-xl
                       transition-all duration-200 active:scale-95
                       ${
                         dayData.hasEvents
-                          ? "bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+                          ? "bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
                           : "cursor-default"
                       }
-                      ${isToday ? "border-2 border-black dark:border-white" : ""}
-                      ${isSelected && !isToday ? "border-2 border-gray-400 dark:border-gray-600" : ""}
+                      ${isToday ? "ring-2 ring-black dark:ring-white bg-white dark:bg-black" : ""}
+                      ${isSelected && !isToday ? "ring-2 ring-gray-400 dark:ring-gray-600" : ""}
                     `}
                   >
                     <span
                       className={`text-xs portrait:text-sm lg:text-base font-mono mb-0.5 portrait:mb-1 ${
                         dayData.hasEvents
-                          ? "text-gray-900 dark:text-white"
+                          ? "text-gray-900 dark:text-white font-semibold"
                           : "text-gray-300 dark:text-gray-700"
                       }`}
                     >
@@ -289,7 +333,7 @@ export function CalendarView({
                 </h3>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 portrait:gap-2 pt-0.5 portrait:pt-1">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 portrait:gap-2 pt-0.5 portrait:pt-1 max-h-[150px] overflow-y-auto pr-1 custom-scrollbar">
                 {Array.from(
                   new Set(
                     schedule.flatMap((s) => s.events.map((e) => e.materia)),
@@ -306,7 +350,7 @@ export function CalendarView({
                         key={materia}
                         onClick={() => toggleSubject(materia)}
                         className={cn(
-                          "flex items-center gap-2 portrait:gap-3 w-full text-left group py-0.5 portrait:py-1 px-1 rounded-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-900",
+                          "flex items-center gap-2 portrait:gap-3 w-full text-left group py-1.5 px-2 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-900 border border-transparent hover:border-gray-100 dark:hover:border-gray-800",
                           isHidden && "opacity-50 grayscale",
                         )}
                       >
@@ -338,9 +382,9 @@ export function CalendarView({
 
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                           {isHidden ? (
-                            <EyeOff className="w-2.5 h-2.5 portrait:w-3 portrait:h-3 lg:w-4 lg:h-4 text-gray-400" />
+                            <EyeOff className="w-3 h-3 lg:w-4 lg:h-4 text-gray-400" />
                           ) : (
-                            <Eye className="w-2.5 h-2.5 portrait:w-3 portrait:h-3 lg:w-4 lg:h-4 text-gray-400" />
+                            <Eye className="w-3 h-3 lg:w-4 lg:h-4 text-gray-400" />
                           )}
                         </div>
                       </button>
