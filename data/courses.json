@@ -10,6 +10,18 @@
       "addedBy": "admin",
       "id": "course-1770751248080-5nblcoy3g",
       "createdAt": "2026-02-10T19:20:48.080Z"
+    },
+    {
+      "name": "Storia e storie del mond contemporaneo",
+      "linkId": "6985df58d461ac0037e55641",
+      "year": 2,
+      "academicYear": "2025/2026",
+      "status": "pending",
+      "verified": false,
+      "addedBy": "user",
+      "userId": "user-1770746290431-4d9q16hcl",
+      "id": "course-1770989231788-8059954d0",
+      "createdAt": "2026-02-13T13:27:11.788Z"
     }
   ]
 }
