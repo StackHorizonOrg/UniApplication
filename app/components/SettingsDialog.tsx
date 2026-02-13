@@ -355,7 +355,7 @@ export function SettingsDialog({
                                   : "bg-yellow-50 dark:bg-yellow-950/50 border-yellow-200 dark:border-yellow-900 text-yellow-700 dark:text-yellow-300",
                               )}
                             >
-                              ⏳ Attesa
+                              Attesa
                             </span>
                           )}
                           {course.status === "rejected" && (

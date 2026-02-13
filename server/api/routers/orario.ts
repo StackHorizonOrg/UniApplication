@@ -93,11 +93,32 @@ const processEvents = (
   for (const e of events) {
     let eventCity = "Unknown";
     let aulaName = "N/A";
+    let padiglione = "";
 
     if (e.aule && e.aule.length > 0) {
       aulaName = e.aule[0].descrizione;
       if (e.aule[0].edificio) {
         eventCity = e.aule[0].edificio.comune;
+      }
+
+      // Extract padiglione from aula description if present
+      const padiglioneMatch = aulaName.match(/Padiglione\s+([^-]+)/i);
+      if (padiglioneMatch) {
+        padiglione = `Pad. ${padiglioneMatch[1].trim()}`;
+      } else {
+        // Check for full names
+        if (aulaName.includes("Morselli")) padiglione = "Pad. Morselli";
+        else if (aulaName.includes("Seppilli")) padiglione = "Pad. Seppilli";
+        else if (aulaName.includes("Antonini")) padiglione = "Pad. Antonini";
+        else if (aulaName.includes("Monte Generoso"))
+          padiglione = "Pad. Monte Generoso";
+        // Check for abbreviations (word boundaries to avoid partial matches)
+        else if (/\bPM\b/i.test(aulaName) || /\bTM\b/i.test(aulaName))
+          padiglione = "Pad. Morselli";
+        else if (/\bMTG\b/i.test(aulaName) || /\bMG\b/i.test(aulaName))
+          padiglione = "Pad. Monte Generoso";
+        else if (/\bSEP\b/i.test(aulaName)) padiglione = "Pad. Seppilli";
+        else if (/\bANT\b/i.test(aulaName)) padiglione = "Pad. Antonini";
       }
     }
 
@@ -128,7 +149,16 @@ const processEvents = (
         : "N/A";
     const time = `${start} - ${end}`;
     const title = e.nome || "Lezione";
-    const location = `${aulaName} (${eventCity})`;
+
+    let location = `${aulaName} (${eventCity})`;
+    if (padiglione) {
+      const normalizedAula = aulaName.toLowerCase();
+      const normalizedPad = padiglione.toLowerCase().replace("pad.", "").trim();
+
+      if (!normalizedAula.includes(normalizedPad)) {
+        location = `${aulaName} - ${padiglione} (${eventCity})`;
+      }
+    }
 
     if (dayIdx >= 0 && dayIdx <= 6) {
       const isDuplicate = result[dayIdx].events.some(
@@ -304,18 +334,18 @@ export const orarioRouter = createTRPCRouter({
         dataFine: endRange.toISO(),
       };
 
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
 
-        if (!response.ok) throw new Error(`API error: ${response.status}`);
-        const rawData = await response.json();
-        const rawEvents: CinecaEvent[] = Array.isArray(rawData)
-          ? rawData
-          : rawData.impegni || [];
+          if (!response.ok) throw new Error(`API error: ${response.status}`);
+          const rawData = await response.json();
+          const rawEvents: CinecaEvent[] = Array.isArray(rawData)
+            ? rawData
+            : rawData.impegni || [];
 
         const subjects = new Set<string>();
         for (const e of rawEvents) {
