@@ -285,7 +285,7 @@ export function CalendarView({
                 )}
               </div>
 
-              <div className="relative h-[60px] portrait:h-[80px] overflow-hidden">
+              <div className="relative h-[56px] portrait:h-[76px] overflow-hidden">
                 <AnimatePresence
                   initial={false}
                   custom={direction}
@@ -320,7 +320,7 @@ export function CalendarView({
                             }
                           }}
                           className={cn(
-                            "relative aspect-square flex flex-col items-center justify-center rounded-xl transition-all",
+                            "relative aspect-square flex flex-col items-center justify-center rounded-lg transition-all max-w-[48px] mx-auto w-full",
                             dayData.hasEvents
                               ? "bg-gray-50 dark:bg-gray-900"
                               : "opacity-20",
