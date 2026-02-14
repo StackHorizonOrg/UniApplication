@@ -334,18 +334,18 @@ export const orarioRouter = createTRPCRouter({
         dataFine: endRange.toISO(),
       };
 
-        try {
-          const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
 
-          if (!response.ok) throw new Error(`API error: ${response.status}`);
-          const rawData = await response.json();
-          const rawEvents: CinecaEvent[] = Array.isArray(rawData)
-            ? rawData
-            : rawData.impegni || [];
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        const rawData = await response.json();
+        const rawEvents: CinecaEvent[] = Array.isArray(rawData)
+          ? rawData
+          : rawData.impegni || [];
 
         const subjects = new Set<string>();
         for (const e of rawEvents) {

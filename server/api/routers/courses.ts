@@ -9,9 +9,15 @@ import {
   rejectCourse,
   verifyCourse,
 } from "@/lib/courses";
+import { migrateJsonToDb } from "@/lib/db/migrate";
 import { adminProcedure, createTRPCRouter, publicProcedure } from "../trpc";
 
 export const coursesRouter = createTRPCRouter({
+  migrate: adminProcedure.mutation(async () => {
+    await migrateJsonToDb();
+    return { success: true };
+  }),
+
   getAll: publicProcedure
     .input(
       z
@@ -20,16 +26,16 @@ export const coursesRouter = createTRPCRouter({
         })
         .optional(),
     )
-    .query(({ input }) => {
-      return getVisibleCourses(input?.userId);
+    .query(async ({ input }) => {
+      return await getVisibleCourses(input?.userId);
     }),
 
-  getAllForAdmin: adminProcedure.query(() => {
-    return getAllCoursesForAdmin();
+  getAllForAdmin: adminProcedure.query(async () => {
+    return await getAllCoursesForAdmin();
   }),
 
-  getPending: adminProcedure.query(() => {
-    return getPendingCourses();
+  getPending: adminProcedure.query(async () => {
+    return await getPendingCourses();
   }),
 
   add: publicProcedure
@@ -43,13 +49,13 @@ export const coursesRouter = createTRPCRouter({
         addedBy: z.string().default("user"),
       }),
     )
-    .mutation(({ input, ctx }) => {
+    .mutation(async ({ input, ctx }) => {
       const isAdmin = ctx.isAdmin;
       const status =
         isAdmin && input.addedBy === "admin" ? "approved" : "pending";
       const verified = isAdmin && input.addedBy === "admin";
 
-      return addCourse({
+      return await addCourse({
         name: input.name,
         linkId: input.linkId,
         year: input.year,
@@ -63,9 +69,9 @@ export const coursesRouter = createTRPCRouter({
 
   approve: adminProcedure
     .input(z.object({ courseId: z.string() }))
-    .mutation(({ input }) => {
+    .mutation(async ({ input }) => {
       try {
-        const success = approveCourse(input.courseId);
+        const success = await approveCourse(input.courseId);
         return { success };
       } catch (error) {
         throw new Error(
@@ -78,22 +84,22 @@ export const coursesRouter = createTRPCRouter({
 
   reject: adminProcedure
     .input(z.object({ courseId: z.string() }))
-    .mutation(({ input }) => {
-      const success = rejectCourse(input.courseId);
+    .mutation(async ({ input }) => {
+      const success = await rejectCourse(input.courseId);
       return { success };
     }),
 
   verify: adminProcedure
     .input(z.object({ courseId: z.string() }))
-    .mutation(({ input }) => {
-      const success = verifyCourse(input.courseId);
+    .mutation(async ({ input }) => {
+      const success = await verifyCourse(input.courseId);
       return { success };
     }),
 
   delete: adminProcedure
     .input(z.object({ courseId: z.string() }))
-    .mutation(({ input }) => {
-      const success = deleteCourse(input.courseId);
+    .mutation(async ({ input }) => {
+      const success = await deleteCourse(input.courseId);
       return { success };
     }),
 });

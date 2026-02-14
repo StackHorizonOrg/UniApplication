@@ -1,15 +1,20 @@
 import { initTRPC, TRPCError } from "@trpc/server";
+import { sql } from "drizzle-orm";
 import superjson from "superjson";
 import { ZodError } from "zod";
 import { isValidAdminToken } from "@/lib/admin";
+import { db } from "@/lib/db";
+import { analyticsUsers, apiLogs } from "@/lib/db/schema";
 
 export const createTRPCContext = async (opts: { headers: Headers }) => {
   const adminToken = opts.headers.get("x-admin-token");
+  const userId = opts.headers.get("x-user-id");
   const isAdmin = isValidAdminToken(adminToken);
 
   return {
     ...opts,
     isAdmin,
+    userId,
   };
 };
 
@@ -42,7 +47,38 @@ const isAdminMiddleware = t.middleware(({ ctx, next }) => {
   });
 });
 
+const analyticsMiddleware = t.middleware(async ({ ctx, next, path, type }) => {
+  if (ctx.userId) {
+    // Run in background to not block the request
+    void (async () => {
+      try {
+        const userId = ctx.userId;
+        if (!userId) return;
+
+        await db
+          .insert(analyticsUsers)
+          .values({
+            id: userId,
+          })
+          .onDuplicateKeyUpdate({
+            set: { lastSeen: sql`CURRENT_TIMESTAMP` },
+          });
+
+        await db.insert(apiLogs).values({
+          endpoint: path,
+          method: type,
+          userId: ctx.userId,
+        });
+      } catch (err) {
+        console.error("Error logging analytics:", err);
+      }
+    })();
+  }
+
+  return next();
+});
+
 export const createCallerFactory = t.createCallerFactory;
 export const createTRPCRouter = t.router;
-export const publicProcedure = t.procedure;
+export const publicProcedure = t.procedure.use(analyticsMiddleware);
 export const adminProcedure = t.procedure.use(isAdminMiddleware);

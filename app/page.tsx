@@ -152,7 +152,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen max-h-screen bg-white dark:bg-black text-gray-900 dark:text-white flex flex-col overflow-hidden">
-      <main className="w-full px-4 py-3 portrait:py-4 lg:px-8 lg:py-6 flex-1 max-w-400 mx-auto flex flex-col overflow-hidden">
+      <main className="w-full px-4 py-3 portrait:py-4 lg:px-8 lg:py-6 flex-1 max-w-4xl mx-auto flex flex-col overflow-hidden">
         <div className="flex items-center justify-between mb-2 portrait:mb-4 lg:mb-6 flex-shrink-0">
           <div className="min-w-0 flex-1">
             <h1
@@ -178,12 +178,12 @@ export default function Home() {
         </div>
 
         {calendarId ? (
-          <div className="flex flex-col landscape:flex-row lg:grid lg:grid-cols-12 gap-2 landscape:gap-3 portrait:gap-6 lg:gap-4 flex-1 overflow-hidden min-h-0">
+          <div className="flex flex-col landscape:flex-row lg:grid lg:grid-cols-12 gap-2 landscape:gap-3 portrait:gap-6 lg:gap-4 flex-1 min-h-0">
             <section className="w-full landscape:w-[280px] lg:col-span-3 flex-shrink-0 landscape:overflow-hidden">
               <NextLessonCard schedule={schedule} />
             </section>
 
-            <section className="w-full landscape:flex-1 lg:col-span-5 lg:overflow-hidden flex-1 min-h-0 portrait:flex-initial overflow-hidden">
+            <section className="w-full landscape:flex-1 lg:col-span-5 flex-1 min-h-0 portrait:flex-1 flex flex-col">
               <CalendarView
                 schedule={schedule}
                 weekOffset={weekOffset}

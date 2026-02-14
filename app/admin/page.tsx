@@ -1,17 +1,23 @@
 "use client";
 
 import {
+  Activity,
   ArrowLeft,
+  BarChart3,
   Calendar,
   Check,
   CheckCircle2,
+  Clock,
   Copy,
+  Globe,
   GraduationCap,
+  LayoutGrid,
   LogOut,
   Plus,
   Shield,
   ShieldCheck,
   Trash2,
+  Users,
   XCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -40,6 +46,7 @@ import { ThemeToggle } from "../components/ThemeToggle";
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [activeTab, setActiveTab] = useState<"courses" | "stats">("courses");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isClient, setIsClient] = useState(false);
@@ -96,12 +103,36 @@ export default function AdminPage() {
 
   const {
     data: courses,
-    isLoading,
+    isLoading: isLoadingCourses,
     error: coursesError,
   } = api.courses.getAllForAdmin.useQuery(undefined, {
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && activeTab === "courses",
     retry: 1,
   });
+
+  const { data: stats, isLoading: isLoadingStats } =
+    api.analytics.getStats.useQuery(undefined, {
+      enabled: isAuthenticated && activeTab === "stats",
+    });
+
+  const { data: dailyRequests } = api.analytics.getDailyRequests.useQuery(
+    undefined,
+    {
+      enabled: isAuthenticated && activeTab === "stats",
+    },
+  );
+
+  const { data: hourlyRequests } =
+    api.analytics.getHourlyRequestsToday.useQuery(undefined, {
+      enabled: isAuthenticated && activeTab === "stats",
+    });
+
+  const { data: topEndpoints } = api.analytics.getTopEndpoints.useQuery(
+    undefined,
+    {
+      enabled: isAuthenticated && activeTab === "stats",
+    },
+  );
 
   useEffect(() => {
     if (coursesError && isAuthenticated) {
@@ -310,9 +341,22 @@ export default function AdminPage() {
               <Shield className="h-9 w-9" />
               Admin Panel
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              Gestisci corsi e approvazioni
-            </p>
+            <div className="flex items-center gap-4 mt-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab("courses")}
+                className={`text-sm font-medium transition-colors ${activeTab === "courses" ? "text-black dark:text-white underline underline-offset-4" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Gestione Corsi
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("stats")}
+                className={`text-sm font-medium transition-colors ${activeTab === "stats" ? "text-black dark:text-white underline underline-offset-4" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Statistiche
+              </button>
+            </div>
           </div>
           <div className="flex gap-2">
             <button
@@ -334,311 +378,467 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <button
-            type="button"
-            onClick={() => setFilter("pending")}
-            className={`bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 border rounded-xl p-5 text-left transition-all ${
-              filter === "pending"
-                ? "border-yellow-400 dark:border-yellow-600 ring-2 ring-yellow-400 dark:ring-yellow-600 ring-opacity-50"
-                : "border-yellow-200 dark:border-yellow-900 hover:border-yellow-300 dark:hover:border-yellow-800"
-            }`}
-          >
-            <p className="text-xs font-medium text-yellow-700 dark:text-yellow-400 uppercase tracking-wider mb-1">
-              In Attesa
-            </p>
-            <p className="text-3xl font-bold text-yellow-900 dark:text-yellow-100">
-              {pendingCourses.length}
-            </p>
-            <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">
-              {pendingCourses.length === 1
-                ? "corso da approvare"
-                : "corsi da approvare"}
-            </p>
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter("approved")}
-            className={`bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border rounded-xl p-5 text-left transition-all ${
-              filter === "approved"
-                ? "border-green-400 dark:border-green-600 ring-2 ring-green-400 dark:ring-green-600 ring-opacity-50"
-                : "border-green-200 dark:border-green-900 hover:border-green-300 dark:hover:border-green-800"
-            }`}
-          >
-            <p className="text-xs font-medium text-green-700 dark:text-green-400 uppercase tracking-wider mb-1">
-              Approvati
-            </p>
-            <p className="text-3xl font-bold text-green-900 dark:text-green-100">
-              {approvedCourses.length}
-            </p>
-            <p className="text-xs text-green-600 dark:text-green-500 mt-1">
-              {approvedCourses.filter((c) => c.verified).length} verificati
-            </p>
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter("rejected")}
-            className={`bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20 border rounded-xl p-5 text-left transition-all ${
-              filter === "rejected"
-                ? "border-red-400 dark:border-red-600 ring-2 ring-red-400 dark:ring-red-600 ring-opacity-50"
-                : "border-red-200 dark:border-red-900 hover:border-red-300 dark:hover:border-red-800"
-            }`}
-          >
-            <p className="text-xs font-medium text-red-700 dark:text-red-400 uppercase tracking-wider mb-1">
-              Rifiutati
-            </p>
-            <p className="text-3xl font-bold text-red-900 dark:text-red-100">
-              {rejectedCourses.length}
-            </p>
-            <p className="text-xs text-red-600 dark:text-red-500 mt-1">
-              {rejectedCourses.length === 1
-                ? "corso rifiutato"
-                : "corsi rifiutati"}
-            </p>
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3 mb-6">
-          <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-            Filtra:
-          </span>
-          <div className="flex gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() => setFilter("all")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                filter === "all"
-                  ? "bg-black dark:bg-white text-white dark:text-black"
-                  : "bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800"
-              }`}
-            >
-              Tutti ({courses?.length || 0})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilter("pending")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                filter === "pending"
-                  ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700"
-                  : "bg-yellow-50 dark:bg-yellow-950/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-900"
-              }`}
-            >
-              In Attesa ({pendingCourses.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilter("approved")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                filter === "approved"
-                  ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-700"
-                  : "bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-950/30 border border-green-200 dark:border-green-900"
-              }`}
-            >
-              Approvati ({approvedCourses.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilter("rejected")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                filter === "rejected"
-                  ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700"
-                  : "bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-900"
-              }`}
-            >
-              Rifiutati ({rejectedCourses.length})
-            </button>
-          </div>
-        </div>
-
-        {isLoading ? (
-          <div className="text-center py-16">
-            <div className="w-8 h-8 border-2 border-gray-300 dark:border-gray-600 border-t-gray-900 dark:border-t-white rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400 font-mono text-sm">
-              Caricamento corsi...
-            </p>
-          </div>
-        ) : coursesError ? (
-          <div className="text-center py-16">
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 max-w-md mx-auto">
-              <p className="text-red-900 dark:text-red-100 font-medium mb-2">
-                Errore nel caricamento
-              </p>
-              <p className="text-sm text-red-700 dark:text-red-300">
-                {coursesError.message}
-              </p>
+        {activeTab === "courses" ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+              <button
+                type="button"
+                onClick={() => setFilter("pending")}
+                className={`bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 border rounded-xl p-5 text-left transition-all ${
+                  filter === "pending"
+                    ? "border-yellow-400 dark:border-yellow-600 ring-2 ring-yellow-400 dark:ring-yellow-600 ring-opacity-50"
+                    : "border-yellow-200 dark:border-yellow-900 hover:border-yellow-300 dark:hover:border-yellow-800"
+                }`}
+              >
+                <p className="text-xs font-medium text-yellow-700 dark:text-yellow-400 uppercase tracking-wider mb-1">
+                  In Attesa
+                </p>
+                <p className="text-3xl font-bold text-yellow-900 dark:text-yellow-100">
+                  {pendingCourses.length}
+                </p>
+                <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">
+                  {pendingCourses.length === 1
+                    ? "corso da approvare"
+                    : "corsi da approvare"}
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter("approved")}
+                className={`bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border rounded-xl p-5 text-left transition-all ${
+                  filter === "approved"
+                    ? "border-green-400 dark:border-green-600 ring-2 ring-green-400 dark:ring-green-600 ring-opacity-50"
+                    : "border-green-200 dark:border-green-900 hover:border-green-300 dark:hover:border-green-800"
+                }`}
+              >
+                <p className="text-xs font-medium text-green-700 dark:text-green-400 uppercase tracking-wider mb-1">
+                  Approvati
+                </p>
+                <p className="text-3xl font-bold text-green-900 dark:text-green-100">
+                  {approvedCourses.length}
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-500 mt-1">
+                  {approvedCourses.filter((c) => c.verified).length} verificati
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilter("rejected")}
+                className={`bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-950/20 dark:to-pink-950/20 border rounded-xl p-5 text-left transition-all ${
+                  filter === "rejected"
+                    ? "border-red-400 dark:border-red-600 ring-2 ring-red-400 dark:ring-red-600 ring-opacity-50"
+                    : "border-red-200 dark:border-red-900 hover:border-red-300 dark:hover:border-red-800"
+                }`}
+              >
+                <p className="text-xs font-medium text-red-700 dark:text-red-400 uppercase tracking-wider mb-1">
+                  Rifiutati
+                </p>
+                <p className="text-3xl font-bold text-red-900 dark:text-red-100">
+                  {rejectedCourses.length}
+                </p>
+                <p className="text-xs text-red-600 dark:text-red-500 mt-1">
+                  {rejectedCourses.length === 1
+                    ? "corso rifiutato"
+                    : "corsi rifiutati"}
+                </p>
+              </button>
             </div>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {filter === "all" && (
-              <>
-                {pendingCourses.length > 0 && (
+
+            <div className="flex items-center gap-3 mb-6">
+              <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                Filtra:
+              </span>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setFilter("all")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    filter === "all"
+                      ? "bg-black dark:bg-white text-white dark:text-black"
+                      : "bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800"
+                  }`}
+                >
+                  Tutti ({courses?.length || 0})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilter("pending")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    filter === "pending"
+                      ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700"
+                      : "bg-yellow-50 dark:bg-yellow-950/20 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-900"
+                  }`}
+                >
+                  In Attesa ({pendingCourses.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilter("approved")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    filter === "approved"
+                      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-700"
+                      : "bg-green-50 dark:bg-green-950/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-950/30 border border-green-200 dark:border-green-900"
+                  }`}
+                >
+                  Approvati ({approvedCourses.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilter("rejected")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    filter === "rejected"
+                      ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-700"
+                      : "bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-900"
+                  }`}
+                >
+                  Rifiutati ({rejectedCourses.length})
+                </button>
+              </div>
+            </div>
+
+            {isLoadingCourses ? (
+              <div className="text-center py-16">
+                <div className="w-8 h-8 border-2 border-gray-300 dark:border-gray-600 border-t-gray-900 dark:border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600 dark:text-gray-400 font-mono text-sm">
+                  Caricamento corsi...
+                </p>
+              </div>
+            ) : coursesError ? (
+              <div className="text-center py-16">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 max-w-md mx-auto">
+                  <p className="text-red-900 dark:text-red-100 font-medium mb-2">
+                    Errore nel caricamento
+                  </p>
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    {coursesError.message}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {filter === "all" && (
+                  <>
+                    {pendingCourses.length > 0 && (
+                      <section>
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 font-serif">
+                          In Attesa di Approvazione
+                        </h2>
+                        <div className="space-y-3">
+                          {pendingCourses.map((course) => (
+                            <CourseCard
+                              key={course.id}
+                              course={course}
+                              onApprove={() => handleAction("approve", course)}
+                              onReject={() => handleAction("reject", course)}
+                              onDelete={() => handleAction("delete", course)}
+                              onVerify={() => handleAction("verify", course)}
+                              copiedCourseId={copiedCourseId}
+                              onCopyLink={handleCopyCourseLink}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
+                    {approvedCourses.length > 0 && (
+                      <section>
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 font-serif">
+                          Corsi Approvati
+                        </h2>
+                        <div className="space-y-3">
+                          {approvedCourses.map((course) => (
+                            <CourseCard
+                              key={course.id}
+                              course={course}
+                              onReject={() => handleAction("reject", course)}
+                              onDelete={() => handleAction("delete", course)}
+                              onVerify={() => handleAction("verify", course)}
+                              copiedCourseId={copiedCourseId}
+                              onCopyLink={handleCopyCourseLink}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
+                    {rejectedCourses.length > 0 && (
+                      <section>
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 font-serif">
+                          Corsi Rifiutati
+                        </h2>
+                        <div className="space-y-3">
+                          {rejectedCourses.map((course) => (
+                            <CourseCard
+                              key={course.id}
+                              course={course}
+                              onApprove={() => handleAction("approve", course)}
+                              onDelete={() => handleAction("delete", course)}
+                              onVerify={() => handleAction("verify", course)}
+                              copiedCourseId={copiedCourseId}
+                              onCopyLink={handleCopyCourseLink}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    )}
+                  </>
+                )}
+
+                {filter === "pending" && (
                   <section>
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 font-serif">
                       In Attesa di Approvazione
                     </h2>
-                    <div className="space-y-3">
-                      {pendingCourses.map((course) => (
-                        <CourseCard
-                          key={course.id}
-                          course={course}
-                          onApprove={() => handleAction("approve", course)}
-                          onReject={() => handleAction("reject", course)}
-                          onDelete={() => handleAction("delete", course)}
-                          onVerify={() => handleAction("verify", course)}
-                          copiedCourseId={copiedCourseId}
-                          onCopyLink={handleCopyCourseLink}
-                        />
-                      ))}
-                    </div>
+                    {pendingCourses.length > 0 ? (
+                      <div className="space-y-3">
+                        {pendingCourses.map((course) => (
+                          <CourseCard
+                            key={course.id}
+                            course={course}
+                            onApprove={() => handleAction("approve", course)}
+                            onReject={() => handleAction("reject", course)}
+                            onDelete={() => handleAction("delete", course)}
+                            onVerify={() => handleAction("verify", course)}
+                            copiedCourseId={copiedCourseId}
+                            onCopyLink={handleCopyCourseLink}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 border-2 border-dashed border-yellow-200 dark:border-yellow-900 rounded-xl bg-yellow-50/30 dark:bg-yellow-950/10">
+                        <p className="text-yellow-600 dark:text-yellow-400">
+                          Nessun corso in attesa
+                        </p>
+                      </div>
+                    )}
                   </section>
                 )}
 
-                {approvedCourses.length > 0 && (
+                {filter === "approved" && (
                   <section>
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 font-serif">
                       Corsi Approvati
                     </h2>
-                    <div className="space-y-3">
-                      {approvedCourses.map((course) => (
-                        <CourseCard
-                          key={course.id}
-                          course={course}
-                          onReject={() => handleAction("reject", course)}
-                          onDelete={() => handleAction("delete", course)}
-                          onVerify={() => handleAction("verify", course)}
-                          copiedCourseId={copiedCourseId}
-                          onCopyLink={handleCopyCourseLink}
-                        />
-                      ))}
-                    </div>
+                    {approvedCourses.length > 0 ? (
+                      <div className="space-y-3">
+                        {approvedCourses.map((course) => (
+                          <CourseCard
+                            key={course.id}
+                            course={course}
+                            onReject={() => handleAction("reject", course)}
+                            onDelete={() => handleAction("delete", course)}
+                            onVerify={() => handleAction("verify", course)}
+                            copiedCourseId={copiedCourseId}
+                            onCopyLink={handleCopyCourseLink}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 border-2 border-dashed border-green-200 dark:border-green-900 rounded-xl bg-green-50/30 dark:bg-yellow-950/10">
+                        <p className="text-green-600 dark:text-green-400">
+                          Nessun corso approvato
+                        </p>
+                      </div>
+                    )}
                   </section>
                 )}
 
-                {rejectedCourses.length > 0 && (
+                {filter === "rejected" && (
                   <section>
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 font-serif">
                       Corsi Rifiutati
                     </h2>
-                    <div className="space-y-3">
-                      {rejectedCourses.map((course) => (
-                        <CourseCard
-                          key={course.id}
-                          course={course}
-                          onApprove={() => handleAction("approve", course)}
-                          onDelete={() => handleAction("delete", course)}
-                          onVerify={() => handleAction("verify", course)}
-                          copiedCourseId={copiedCourseId}
-                          onCopyLink={handleCopyCourseLink}
-                        />
-                      ))}
-                    </div>
+                    {rejectedCourses.length > 0 ? (
+                      <div className="space-y-3">
+                        {rejectedCourses.map((course) => (
+                          <CourseCard
+                            key={course.id}
+                            course={course}
+                            onApprove={() => handleAction("approve", course)}
+                            onDelete={() => handleAction("delete", course)}
+                            onVerify={() => handleAction("verify", course)}
+                            copiedCourseId={copiedCourseId}
+                            onCopyLink={handleCopyCourseLink}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 border-2 border-dashed border-red-200 dark:border-red-900 rounded-xl bg-red-50/30 dark:bg-yellow-950/10">
+                        <p className="text-red-600 dark:text-red-400">
+                          Nessun corso rifiutato
+                        </p>
+                      </div>
+                    )}
                   </section>
                 )}
-              </>
-            )}
 
-            {filter === "pending" && (
-              <section>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 font-serif">
-                  In Attesa di Approvazione
-                </h2>
-                {pendingCourses.length > 0 ? (
-                  <div className="space-y-3">
-                    {pendingCourses.map((course) => (
-                      <CourseCard
-                        key={course.id}
-                        course={course}
-                        onApprove={() => handleAction("approve", course)}
-                        onReject={() => handleAction("reject", course)}
-                        onDelete={() => handleAction("delete", course)}
-                        onVerify={() => handleAction("verify", course)}
-                        copiedCourseId={copiedCourseId}
-                        onCopyLink={handleCopyCourseLink}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 border-2 border-dashed border-yellow-200 dark:border-yellow-900 rounded-xl bg-yellow-50/30 dark:bg-yellow-950/10">
-                    <p className="text-yellow-600 dark:text-yellow-400">
-                      Nessun corso in attesa
+                {courses?.length === 0 && (
+                  <div className="text-center py-16 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
+                    <p className="text-gray-500 dark:text-gray-400 mb-3">
+                      Nessun corso presente
                     </p>
+                    <button
+                      type="button"
+                      onClick={() => setAddCourseDialog(true)}
+                      className="text-sm text-gray-900 dark:text-white underline hover:no-underline"
+                    >
+                      Aggiungi il primo corso
+                    </button>
                   </div>
                 )}
-              </section>
-            )}
-
-            {filter === "approved" && (
-              <section>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 font-serif">
-                  Corsi Approvati
-                </h2>
-                {approvedCourses.length > 0 ? (
-                  <div className="space-y-3">
-                    {approvedCourses.map((course) => (
-                      <CourseCard
-                        key={course.id}
-                        course={course}
-                        onReject={() => handleAction("reject", course)}
-                        onDelete={() => handleAction("delete", course)}
-                        onVerify={() => handleAction("verify", course)}
-                        copiedCourseId={copiedCourseId}
-                        onCopyLink={handleCopyCourseLink}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 border-2 border-dashed border-green-200 dark:border-green-900 rounded-xl bg-green-50/30 dark:bg-green-950/10">
-                    <p className="text-green-600 dark:text-green-400">
-                      Nessun corso approvato
-                    </p>
-                  </div>
-                )}
-              </section>
-            )}
-
-            {filter === "rejected" && (
-              <section>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 font-serif">
-                  Corsi Rifiutati
-                </h2>
-                {rejectedCourses.length > 0 ? (
-                  <div className="space-y-3">
-                    {rejectedCourses.map((course) => (
-                      <CourseCard
-                        key={course.id}
-                        course={course}
-                        onApprove={() => handleAction("approve", course)}
-                        onDelete={() => handleAction("delete", course)}
-                        onVerify={() => handleAction("verify", course)}
-                        copiedCourseId={copiedCourseId}
-                        onCopyLink={handleCopyCourseLink}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 border-2 border-dashed border-red-200 dark:border-red-900 rounded-xl bg-red-50/30 dark:bg-red-950/10">
-                    <p className="text-red-600 dark:text-red-400">
-                      Nessun corso rifiutato
-                    </p>
-                  </div>
-                )}
-              </section>
-            )}
-
-            {courses?.length === 0 && (
-              <div className="text-center py-16 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
-                <p className="text-gray-500 dark:text-gray-400 mb-3">
-                  Nessun corso presente
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setAddCourseDialog(true)}
-                  className="text-sm text-gray-900 dark:text-white underline hover:no-underline"
-                >
-                  Aggiungi il primo corso
-                </button>
               </div>
+            )}
+          </>
+        ) : (
+          <div className="space-y-8 animate-in fade-in duration-500">
+            {isLoadingStats ? (
+              <div className="text-center py-16">
+                <div className="w-8 h-8 border-2 border-gray-300 dark:border-gray-600 border-t-gray-900 dark:border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600 dark:text-gray-400 font-mono text-sm">
+                  Caricamento statistiche...
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <StatCard
+                    title="Utenti Totali"
+                    value={stats?.totalUsers || 0}
+                    icon={<Users className="h-5 w-5" />}
+                    color="blue"
+                  />
+                  <StatCard
+                    title="Utenti Oggi"
+                    value={stats?.activeToday || 0}
+                    icon={<Activity className="h-5 w-5" />}
+                    color="green"
+                  />
+                  <StatCard
+                    title="Richieste Totali"
+                    value={stats?.totalRequests || 0}
+                    icon={<Globe className="h-5 w-5" />}
+                    color="purple"
+                  />
+                  <StatCard
+                    title="Richieste Oggi"
+                    value={stats?.requestsToday || 0}
+                    icon={<BarChart3 className="h-5 w-5" />}
+                    color="orange"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <section className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                      <Calendar className="h-5 w-5 text-blue-500" />
+                      Richieste Giornaliere (Ultimi 30gg)
+                    </h2>
+                    <div className="h-64 flex items-end gap-1 px-2">
+                      {dailyRequests && dailyRequests.length > 0 ? (
+                        (() => {
+                          const maxCount = Math.max(
+                            ...dailyRequests.map((d) => d.count),
+                            1,
+                          );
+                          return dailyRequests.map((d) => (
+                            <div
+                              key={d.date}
+                              className="flex-1 bg-blue-500/20 hover:bg-blue-500/40 rounded-t-sm transition-all group relative"
+                              style={{
+                                height: `${(d.count / maxCount) * 100}%`,
+                              }}
+                            >
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-black text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                {new Date(d.date).toLocaleDateString("it-IT", {
+                                  day: "numeric",
+                                  month: "short",
+                                })}
+                                : {d.count}
+                              </div>
+                            </div>
+                          ));
+                        })()
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm italic">
+                          Nessun dato disponibile
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  <section className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-orange-500" />
+                      Richieste per Ora (Oggi)
+                    </h2>
+                    <div className="h-64 flex items-end gap-1 px-2">
+                      {(() => {
+                        const hourlyData = Array.from(
+                          { length: 24 },
+                          (_, i) => ({
+                            hour: i,
+                            count:
+                              hourlyRequests?.find((h) => h.hour === i)
+                                ?.count || 0,
+                          }),
+                        );
+                        const maxCount = Math.max(
+                          ...hourlyData.map((h) => h.count),
+                          1,
+                        );
+                        return hourlyData.map((h) => (
+                          <div
+                            key={h.hour}
+                            className="flex-1 bg-orange-500/20 hover:bg-orange-500/40 rounded-t-sm transition-all group relative"
+                            style={{ height: `${(h.count / maxCount) * 100}%` }}
+                          >
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-black text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                              Ore {h.hour}: {h.count}
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </section>
+                </div>
+
+                <section className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                    <LayoutGrid className="h-5 w-5 text-purple-500" />
+                    Endpoint più Richiesti
+                  </h2>
+                  <div className="space-y-3">
+                    {topEndpoints?.map((endpoint, i) => (
+                      <div
+                        key={endpoint.endpoint}
+                        className="flex items-center gap-4"
+                      >
+                        <span className="text-xs font-mono text-gray-400 w-6">
+                          {i + 1}.
+                        </span>
+                        <div className="flex-1">
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm font-mono text-gray-700 dark:text-gray-300">
+                              {endpoint.endpoint}
+                            </span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {endpoint.count}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-100 dark:bg-gray-900 h-1.5 rounded-full overflow-hidden">
+                            <div
+                              className="bg-purple-500 h-full rounded-full"
+                              style={{
+                                width: `${(endpoint.count / (topEndpoints[0]?.count || 1)) * 100}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </>
             )}
           </div>
         )}
@@ -822,6 +1022,40 @@ export default function AdminPage() {
       </Dialog>
 
       <ThemeToggle />
+    </div>
+  );
+}
+
+function StatCard({
+  title,
+  value,
+  icon,
+  color,
+}: {
+  title: string;
+  value: number;
+  icon: React.ReactNode;
+  color: "blue" | "green" | "purple" | "orange";
+}) {
+  const colors = {
+    blue: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-100 dark:border-blue-900",
+    green:
+      "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 border-green-100 dark:border-green-900",
+    purple:
+      "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 border-purple-100 dark:border-purple-900",
+    orange:
+      "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30 border-orange-100 dark:border-orange-900",
+  };
+
+  return (
+    <div className={`p-5 rounded-xl border ${colors[color]} shadow-sm`}>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-semibold uppercase tracking-wider opacity-80">
+          {title}
+        </span>
+        <div className="opacity-80">{icon}</div>
+      </div>
+      <p className="text-3xl font-bold font-mono">{value.toLocaleString()}</p>
     </div>
   );
 }

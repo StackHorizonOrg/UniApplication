@@ -1,21 +1,28 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useLocalStorage<T>(
   key: string,
   initialValue: T,
 ): [T, (value: T | ((val: T) => T)) => void] {
+  // Use a ref for initialValue to avoid re-triggering logic if it's passed as a literal
+  const initialValueRef = useRef(initialValue);
+
+  useEffect(() => {
+    initialValueRef.current = initialValue;
+  }, [initialValue]);
+
   const readValue = useCallback((): T => {
     if (typeof window === "undefined") {
-      return initialValue;
+      return initialValueRef.current;
     }
     try {
       const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
+      return item ? JSON.parse(item) : initialValueRef.current;
     } catch (error) {
       console.warn(`Error reading localStorage key "${key}":`, error);
-      return initialValue;
+      return initialValueRef.current;
     }
-  }, [key, initialValue]);
+  }, [key]); // Removed initialValue from dependencies
 
   const [storedValue, setStoredValue] = useState<T>(readValue);
 
@@ -39,9 +46,10 @@ export function useLocalStorage<T>(
     [key, storedValue],
   );
 
+  // Synchronize state when key changes
   useEffect(() => {
     setStoredValue(readValue());
-  }, [readValue]);
+  }, [readValue]); // Only re-run if key or readValue (which depends on key) changes
 
   useEffect(() => {
     const handleStorageChange = () => {

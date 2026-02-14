@@ -37,8 +37,21 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
               typeof window !== "undefined"
                 ? localStorage.getItem("adminToken")
                 : null;
+            const userId =
+              typeof window !== "undefined"
+                ? localStorage.getItem("userId")
+                : null;
+            let parsedUserId = userId;
+            if (userId) {
+              try {
+                parsedUserId = JSON.parse(userId);
+              } catch (_e) {
+                // Not JSON
+              }
+            }
             return {
               ...(adminToken ? { "x-admin-token": adminToken } : {}),
+              ...(parsedUserId ? { "x-user-id": String(parsedUserId) } : {}),
             };
           },
         }),

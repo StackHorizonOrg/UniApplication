@@ -1,5 +1,6 @@
-import fs from "node:fs";
-import path from "node:path";
+import { and, eq, ne, or } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { courses } from "@/lib/db/schema";
 
 export type CourseStatus = "pending" | "approved" | "rejected";
 
@@ -7,54 +8,45 @@ export interface Course {
   id: string;
   name: string;
   linkId: string;
-  year?: number;
-  academicYear?: string;
+  year?: number | null;
+  academicYear?: string | null;
   status: CourseStatus;
   verified: boolean;
   addedBy: string;
-  userId?: string;
+  userId?: string | null;
   createdAt: string;
 }
 
-export interface CoursesData {
-  courses: Course[];
+interface DbCourse {
+  id: string;
+  name: string;
+  linkId: string;
+  year?: number | null;
+  academicYear?: string | null;
+  status: string;
+  verified: boolean;
+  addedBy: string;
+  userId?: string | null;
+  createdAt: Date;
 }
 
-const COURSES_FILE_PATH = path.join(process.cwd(), "data", "courses.json");
-
-export function readCourses(): CoursesData {
-  try {
-    if (!fs.existsSync(COURSES_FILE_PATH)) {
-      const defaultData: CoursesData = { courses: [] };
-      writeCourses(defaultData);
-      return defaultData;
-    }
-    const fileContent = fs.readFileSync(COURSES_FILE_PATH, "utf-8");
-    return JSON.parse(fileContent);
-  } catch (error) {
-    console.error("Error reading courses file:", error);
-    return { courses: [] };
-  }
+function mapCourse(dbCourse: DbCourse): Course {
+  return {
+    ...dbCourse,
+    status: dbCourse.status as CourseStatus,
+    createdAt: dbCourse.createdAt.toISOString(),
+  };
 }
 
-export function writeCourses(data: CoursesData): void {
-  try {
-    const dir = path.dirname(COURSES_FILE_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(COURSES_FILE_PATH, JSON.stringify(data, null, 2), "utf-8");
-  } catch (error) {
-    console.error("Error writing courses file:", error);
-  }
-}
-
-export function addCourse(course: Omit<Course, "id" | "createdAt">): Course {
-  const data = readCourses();
-
-  const existingApprovedCourse = data.courses.find(
-    (c) => c.linkId === course.linkId && c.status === "approved",
-  );
+export async function addCourse(
+  course: Omit<Course, "id" | "createdAt">,
+): Promise<Course> {
+  const existingApprovedCourse = await db.query.courses.findFirst({
+    where: and(
+      eq(courses.linkId, course.linkId),
+      eq(courses.status, "approved"),
+    ),
+  });
 
   if (existingApprovedCourse) {
     throw new Error(
@@ -62,47 +54,58 @@ export function addCourse(course: Omit<Course, "id" | "createdAt">): Course {
     );
   }
 
-  const newCourse: Course = {
-    ...course,
-    id: `course-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    createdAt: new Date().toISOString(),
-  };
-  data.courses.push(newCourse);
-  writeCourses(data);
-  return newCourse;
+  const id = `course-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+  await db.insert(courses).values({
+    id,
+    name: course.name,
+    linkId: course.linkId,
+    year: course.year,
+    academicYear: course.academicYear,
+    status: course.status,
+    verified: course.verified,
+    addedBy: course.addedBy,
+    userId: course.userId,
+  });
+
+  const newCourse = await db.query.courses.findFirst({
+    where: eq(courses.id, id),
+  });
+
+  if (!newCourse) throw new Error("Failed to create course");
+
+  return mapCourse(newCourse as DbCourse);
 }
 
-export function verifyCourse(courseId: string): boolean {
-  const data = readCourses();
-  const course = data.courses.find((c) => c.id === courseId);
-  if (!course) return false;
-  course.verified = true;
-  writeCourses(data);
+export async function verifyCourse(courseId: string): Promise<boolean> {
+  await db
+    .update(courses)
+    .set({ verified: true })
+    .where(eq(courses.id, courseId));
+
   return true;
 }
 
-export function deleteCourse(courseId: string): boolean {
-  const data = readCourses();
-  const initialLength = data.courses.length;
-  data.courses = data.courses.filter((c) => c.id !== courseId);
-  if (data.courses.length !== initialLength) {
-    writeCourses(data);
-    return true;
-  }
-  return false;
+export async function deleteCourse(courseId: string): Promise<boolean> {
+  await db.delete(courses).where(eq(courses.id, courseId));
+
+  return true;
 }
 
-export function approveCourse(courseId: string): boolean {
-  const data = readCourses();
-  const course = data.courses.find((c) => c.id === courseId);
+export async function approveCourse(courseId: string): Promise<boolean> {
+  const course = await db.query.courses.findFirst({
+    where: eq(courses.id, courseId),
+  });
+
   if (!course) return false;
 
-  const existingApproved = data.courses.find(
-    (c) =>
-      c.linkId === course.linkId &&
-      c.status === "approved" &&
-      c.id !== courseId,
-  );
+  const existingApproved = await db.query.courses.findFirst({
+    where: and(
+      eq(courses.linkId, course.linkId),
+      eq(courses.status, "approved"),
+      ne(courses.id, courseId),
+    ),
+  });
 
   if (existingApproved) {
     throw new Error(
@@ -110,40 +113,41 @@ export function approveCourse(courseId: string): boolean {
     );
   }
 
-  course.status = "approved";
-  writeCourses(data);
+  await db
+    .update(courses)
+    .set({ status: "approved" })
+    .where(eq(courses.id, courseId));
+
   return true;
 }
 
-export function rejectCourse(courseId: string): boolean {
-  const data = readCourses();
-  const course = data.courses.find((c) => c.id === courseId);
-  if (!course) return false;
-  course.status = "rejected";
-  writeCourses(data);
+export async function rejectCourse(courseId: string): Promise<boolean> {
+  await db
+    .update(courses)
+    .set({ status: "rejected" })
+    .where(eq(courses.id, courseId));
+
   return true;
 }
 
-export function getVisibleCourses(userId?: string): Course[] {
-  const data = readCourses();
-
-  return data.courses.filter((course) => {
-    const status = course.status || "approved";
-
-    if (status === "approved") return true;
-
-    if (userId && course.userId === userId) return true;
-
-    return false;
+export async function getVisibleCourses(userId?: string): Promise<Course[]> {
+  const result = await db.query.courses.findMany({
+    where: userId
+      ? or(eq(courses.status, "approved"), eq(courses.userId, userId))
+      : eq(courses.status, "approved"),
   });
+
+  return result.map((c) => mapCourse(c as DbCourse));
 }
 
-export function getPendingCourses(): Course[] {
-  const data = readCourses();
-  return data.courses.filter((c) => c.status === "pending");
+export async function getPendingCourses(): Promise<Course[]> {
+  const result = await db.query.courses.findMany({
+    where: eq(courses.status, "pending"),
+  });
+  return result.map((c) => mapCourse(c as DbCourse));
 }
 
-export function getAllCoursesForAdmin(): Course[] {
-  const data = readCourses();
-  return data.courses;
+export async function getAllCoursesForAdmin(): Promise<Course[]> {
+  const result = await db.query.courses.findMany();
+  return result.map((c) => mapCourse(c as DbCourse));
 }
