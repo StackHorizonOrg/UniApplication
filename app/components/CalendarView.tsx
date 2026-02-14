@@ -360,8 +360,8 @@ export function CalendarView({
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="px-4 py-6">
-            <div className="border-b border-dashed border-gray-200 dark:border-gray-800 pb-2 mb-3 flex items-center gap-2 sticky top-0 bg-white dark:bg-black z-10">
+          <div className="px-4 pt-2 pb-6">
+            <div className="border-b border-dashed border-gray-200 dark:border-gray-800 pt-4 pb-2 mb-3 flex items-center gap-2 sticky top-0 bg-white dark:bg-black z-10">
               <Filter className="w-3 h-3 text-gray-400" />
               <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
                 Filtra Materie

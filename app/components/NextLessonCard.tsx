@@ -34,14 +34,33 @@ export default function NextLessonCard({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isLandscape, setIsLandscape] = useState(false);
   const [direction, setDirection] = useState(0);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
   const [calendarId] = useLocalStorage<string>("calendarId", "");
   const [hiddenSubjects] = useLocalStorage<string[]>("hiddenSubjects", []);
+
+  const handleCalendarDragEnd = (_: unknown, info: PanInfo) => {
+    const threshold = 50;
+    if (info.offset.x < -threshold) {
+      setCalendarMonth((prev) => {
+        const d = new Date(prev);
+        d.setMonth(d.getMonth() + 1);
+        return d;
+      });
+    } else if (info.offset.x > threshold) {
+      setCalendarMonth((prev) => {
+        const d = new Date(prev);
+        d.setMonth(d.getMonth() - 1);
+        return d;
+      });
+    }
+  };
 
   const handleNextDay = () => {
     setDirection(1);
     setDayOffset((prev) => prev + 1);
     setCurrentLessonIndex(0);
   };
+
   const handlePrevDay = () => {
     if (dayOffset > 0) {
       setDirection(-1);
@@ -49,6 +68,7 @@ export default function NextLessonCard({
       setCurrentLessonIndex(0);
     }
   };
+
   const handleNextLesson = () => {
     if (
       displayedLessons.length > 0 &&
@@ -60,6 +80,7 @@ export default function NextLessonCard({
     }
     return false;
   };
+
   const handlePrevLesson = () => {
     if (currentLessonIndex > 0) {
       setDirection(-1);
@@ -218,7 +239,17 @@ export default function NextLessonCard({
               <ChevronLeft className="w-5 h-5" />
             </button>
 
-            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+            <Popover
+              open={isCalendarOpen}
+              onOpenChange={(open) => {
+                setIsCalendarOpen(open);
+                if (open) {
+                  const d = new Date();
+                  d.setDate(d.getDate() + dayOffset);
+                  setCalendarMonth(d);
+                }
+              }}
+            >
               <PopoverTrigger asChild>
                 <button
                   type="button"
@@ -231,21 +262,31 @@ export default function NextLessonCard({
                 </button>
               </PopoverTrigger>
               <PopoverContent
-                className="w-auto p-0 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl"
+                className="w-auto p-0 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden"
                 align="center"
               >
-                <Calendar
-                  mode="single"
-                  selected={
-                    new Date(
-                      new Date().setDate(new Date().getDate() + dayOffset),
-                    )
-                  }
-                  onSelect={handleDateSelect}
-                  initialFocus
-                  locale={it}
-                  className="font-mono"
-                />
+                <motion.div
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.2}
+                  onDragEnd={handleCalendarDragEnd}
+                  className="touch-none"
+                >
+                  <Calendar
+                    mode="single"
+                    month={calendarMonth}
+                    onMonthChange={setCalendarMonth}
+                    selected={
+                      new Date(
+                        new Date().setDate(new Date().getDate() + dayOffset),
+                      )
+                    }
+                    onSelect={handleDateSelect}
+                    initialFocus
+                    locale={it}
+                    className="font-mono"
+                  />
+                </motion.div>
               </PopoverContent>
             </Popover>
 
