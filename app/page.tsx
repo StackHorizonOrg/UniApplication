@@ -106,7 +106,7 @@ export default function Home() {
             Caricamento...
           </p>
         </div>
-        <ThemeToggle />
+
         <SettingsDialog
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
@@ -151,7 +151,7 @@ export default function Home() {
             Controlla impostazioni
           </button>
         </div>
-        <ThemeToggle />
+
         <SettingsDialog
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
@@ -165,23 +165,25 @@ export default function Home() {
   return (
     <div className="h-[100dvh] bg-white dark:bg-black text-zinc-900 dark:text-white flex flex-col overflow-hidden fixed inset-0">
       <main className="w-full px-4 py-3 portrait:py-4 lg:px-8 lg:py-6 flex-1 max-w-screen-2xl mx-auto flex flex-col overflow-hidden">
-        <header className="flex items-center justify-between mb-4 lg:mb-8 flex-shrink-0">
-          <button
-            type="button"
-            className="flex flex-col min-w-0 cursor-default select-none group focus:outline-none text-left"
-            onDoubleClick={() => router.push("/admin")}
-          >
-            <h1 className="text-base lg:text-lg font-bold text-zinc-900 dark:text-white font-serif tracking-tight truncate leading-none">
-              {courseName || "Orario Insubria"}
-            </h1>
-            {courseName && (
-              <p className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest mt-1 truncate">
-                Orario Insubria
-              </p>
-            )}
-          </button>
+        <header className="flex items-center justify-between mb-4 lg:mb-8 flex-shrink-0 gap-4">
+          <div className="flex-1 min-w-0">
+            <button
+              type="button"
+              className="flex flex-col min-w-0 cursor-default select-none group focus:outline-none text-left max-w-full"
+              onDoubleClick={() => router.push("/admin")}
+            >
+              <h1 className="text-base lg:text-lg font-bold text-zinc-900 dark:text-white font-serif tracking-tight truncate leading-none w-full">
+                {courseName || "Orario Insubria"}
+              </h1>
+              {courseName && (
+                <p className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest mt-1 truncate w-full">
+                  Orario Insubria
+                </p>
+              )}
+            </button>
+          </div>
 
-          <div className="flex bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 p-1 rounded-2xl shadow-sm">
+          <div className="flex-shrink-0 flex bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 p-1 rounded-2xl shadow-sm">
             <button
               type="button"
               onClick={() => setActiveView("week")}
@@ -210,13 +212,16 @@ export default function Home() {
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setIsSettingsOpen(true)}
-            className="p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-all active:scale-90 flex-shrink-0"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
+          <div className="flex-shrink-0 flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-all active:scale-90 flex-shrink-0"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
         </header>
 
         {calendarId ? (
@@ -288,8 +293,6 @@ export default function Home() {
           </div>
         )}
       </main>
-
-      <ThemeToggle />
 
       <WelcomeDialog
         isOpen={isWelcomeOpen}

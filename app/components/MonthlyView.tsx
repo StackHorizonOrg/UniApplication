@@ -667,14 +667,14 @@ export function MonthlyView({
           </AnimatePresence>
 
           {/* Filters Section - Scrollable */}
-          <div className="w-full flex-1 min-h-0 flex flex-col border-t border-zinc-100 dark:border-zinc-900 pt-4">
-            <div className="flex items-center gap-3 mb-4 shrink-0 px-2">
-              <div className="p-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-black">
-                <Filter className="w-3.5 h-3.5" />
+          <div className="w-full flex-1 min-h-0 flex flex-col pt-4">
+            <div className="sticky top-0 bg-white dark:bg-black z-10 pt-2 pb-4 px-2">
+              <div className="flex items-center gap-2 opacity-40">
+                <Filter className="w-3.5 h-3.5 text-zinc-400" />
+                <h3 className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400">
+                  Filtra Materie
+                </h3>
               </div>
-              <h3 className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400">
-                Filtra Materie
-              </h3>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar px-2 pb-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">

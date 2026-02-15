@@ -374,7 +374,7 @@ export function CalendarView({
                                     <div
                                       key={m}
                                       className={cn(
-                                        "w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-[1px]",
+                                        "w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full",
                                         isSelected
                                           ? "bg-white/50 dark:bg-black/50"
                                           : "",
@@ -410,13 +410,13 @@ export function CalendarView({
         )}
       >
         <div className="px-5 pb-20">
-          <div className="border-b border-zinc-100 dark:border-zinc-900 py-3.5 flex items-center gap-2 sticky top-0 bg-white dark:bg-black z-10 mb-4">
-            <div className="p-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-black shrink-0">
-              <Filter className="w-3.5 h-3.5" />
+          <div className="sticky top-0 bg-white dark:bg-black z-10 pt-4 pb-2 mb-4">
+            <div className="flex items-center gap-2 opacity-40">
+              <Filter className="w-3.5 h-3.5 text-zinc-400" />
+              <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
+                Filtra Materie
+              </span>
             </div>
-            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
-              Filtra Materie
-            </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-2">
             {Array.from(new Set(allMaterie))
@@ -429,7 +429,7 @@ export function CalendarView({
                     type="button"
                     onClick={() => toggleSubject(materia)}
                     className={cn(
-                      "flex items-center gap-3 p-3 lg:p-4 rounded-xl lg:rounded-2xl border transition-all text-left",
+                      "flex items-center gap-3 p-3.5 rounded-[1.25rem] border transition-all text-left",
                       isHidden
                         ? "bg-zinc-50 dark:bg-zinc-900/20 border-transparent opacity-40"
                         : "bg-white dark:bg-zinc-900/10 border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 hover:shadow-md active:scale-95",
