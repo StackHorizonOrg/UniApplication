@@ -9,15 +9,9 @@ import {
   Clock,
   Filter,
   MapPin,
-  MoreVertical,
 } from "lucide-react";
 import { DateTime } from "luxon";
 import { useEffect, useMemo, useState } from "react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { api } from "@/lib/api";
 import { useLocalStorage } from "@/lib/hooks";
 import type { DaySchedule } from "@/lib/orario-utils";
@@ -517,27 +511,7 @@ export function MonthlyView({
 
         <div className="flex items-center gap-2 lg:gap-4">
           {isLandscape && <ViewTabs />}
-
-          {!isMobile ? (
-            <NavigationControls />
-          ) : (
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 active:scale-95 transition-all"
-                >
-                  <MoreVertical className="w-5 h-5" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                className="w-auto p-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl"
-              >
-                <NavigationControls />
-              </PopoverContent>
-            </Popover>
-          )}
+          <NavigationControls />
         </div>
       </div>
 

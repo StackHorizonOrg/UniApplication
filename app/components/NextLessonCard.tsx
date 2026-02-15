@@ -265,18 +265,38 @@ export default function NextLessonCard({
         </div>
 
         <div className="flex items-center gap-1">
-          {dayOffset !== 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              setDirection(-1);
+              setDayOffset(0);
+            }}
+            className={cn(
+              "p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all",
+              dayOffset === 0 ? "opacity-0 pointer-events-none" : "opacity-100",
+            )}
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+
+          <div className="flex bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden shadow-sm p-0.5 gap-0.5 mr-1">
             <button
               type="button"
-              onClick={() => {
-                setDirection(-1);
-                setDayOffset(0);
-              }}
-              className="p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+              onClick={handlePrevDay}
+              disabled={dayOffset === 0}
+              className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all rounded disabled:opacity-20"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <ChevronLeft className="w-3.5 h-3.5 text-zinc-400" />
             </button>
-          )}
+            <button
+              type="button"
+              onClick={handleNextDay}
+              className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all rounded"
+            >
+              <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
+            </button>
+          </div>
+
           <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1" />
           <span className="text-[10px] font-mono font-bold text-zinc-400 px-1">
             {getDate(dayOffset)}
@@ -434,19 +454,23 @@ export default function NextLessonCard({
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={handlePrevLesson}
-            disabled={displayIndex === 0 || displayedLessons.length <= 1}
+            onClick={() => {
+              if (!handlePrevLesson()) {
+                handlePrevDay();
+              }
+            }}
+            disabled={dayOffset === 0 && displayIndex === 0}
             className="p-1.5 rounded-lg text-zinc-400 disabled:opacity-10 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button
             type="button"
-            onClick={handleNextLesson}
-            disabled={
-              displayIndex >= displayedLessons.length - 1 ||
-              displayedLessons.length <= 1
-            }
+            onClick={() => {
+              if (!handleNextLesson()) {
+                handleNextDay();
+              }
+            }}
             className="p-1.5 rounded-lg text-zinc-400 disabled:opacity-10 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all"
           >
             <ChevronRight className="w-5 h-5" />
