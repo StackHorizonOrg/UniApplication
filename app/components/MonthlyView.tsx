@@ -248,8 +248,12 @@ export function MonthlyView({
 
   if (isLandscape) {
     return (
-      <div className="w-full h-full flex bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-sm relative">
-        {}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="w-full h-full flex bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-sm relative"
+      >
         <div className="w-[320px] border-r border-zinc-100 dark:border-zinc-900 flex flex-col bg-zinc-50/10 dark:bg-zinc-900/10">
           <div className="p-4 border-b border-zinc-100 dark:border-zinc-900 flex items-center justify-between">
             <span className="font-serif font-bold text-sm capitalize">
@@ -492,13 +496,17 @@ export function MonthlyView({
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-sm relative">
-      {}
+    <motion.div
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="w-full h-full flex flex-col bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-sm relative"
+    >
       <div className="px-6 py-4 lg:px-8 lg:py-6 border-b border-zinc-100 dark:border-zinc-900 flex items-center justify-between bg-zinc-50/20 dark:bg-zinc-900/10 z-10">
         <div className="flex flex-col min-w-0">
           <h2 className="text-xl lg:text-2xl font-bold text-zinc-900 dark:text-white font-serif capitalize leading-none tracking-tight truncate">
@@ -516,10 +524,18 @@ export function MonthlyView({
       </div>
 
       <div className="grid grid-cols-7 px-4 border-b border-zinc-50 dark:border-zinc-900/50 shrink-0">
-        {["lun", "mar", "mer", "gio", "ven", "sab", "dom"].map((d) => (
-          <div key={d} className="py-3 lg:py-4 text-center">
+        {[
+          { l: "L", id: "mon" },
+          { l: "M", id: "tue" },
+          { l: "M", id: "wed" },
+          { l: "G", id: "thu" },
+          { l: "V", id: "fri" },
+          { l: "S", id: "sat" },
+          { l: "D", id: "sun" },
+        ].map((d) => (
+          <div key={d.id} className="py-3 lg:py-4 text-center">
             <span className="text-[9px] lg:text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-300 dark:text-zinc-700">
-              {d}
+              {d.l}
             </span>
           </div>
         ))}
@@ -527,112 +543,130 @@ export function MonthlyView({
 
       <div className="flex-1 relative bg-zinc-50/10 dark:bg-zinc-950/10 flex flex-col items-center p-2 lg:p-8 overflow-hidden">
         <div className="w-full max-w-4xl mx-auto flex flex-col h-full gap-4 lg:gap-8">
-          <AnimatePresence initial={false} custom={direction} mode="popLayout">
-            <motion.div
-              key={`grid-${currentDate.toFormat("yyyy-MM")}`}
-              custom={direction}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{
-                x: { type: "spring", stiffness: 300, damping: 30 },
-                opacity: { duration: 0.3 },
-                scale: { duration: 0.3 },
-              }}
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.4}
-              onDragEnd={(_e, { offset, velocity }) => {
-                const swipe = swipePower(offset.x, velocity.x);
-                if (swipe < -swipeConfidenceThreshold) handleNextMonth();
-                else if (swipe > swipeConfidenceThreshold) handlePrevMonth();
-              }}
-              className="grid grid-cols-7 gap-1.5 lg:gap-6 w-full touch-none shrink-0 px-1 py-1"
-            >
-              {daysInMonth.map((day) => {
-                const isoDate = day.date.toISODate();
-                if (!isoDate) return null;
-                const dayEvents = monthlyEvents.filter(
-                  (e) =>
-                    e.date === isoDate &&
-                    !hiddenSubjects.includes(parseEventTitle(e.title).materia),
-                );
-                const isToday = day.date.hasSame(DateTime.now(), "day");
-                const isCurrentMonth = day.isCurrentMonth;
-                const uniqueMaterie = Array.from(
-                  new Set(
-                    dayEvents.map((e) => parseEventTitle(e.title).materia),
-                  ),
-                );
+          <AnimatePresence mode="wait" custom={direction}>
+            {isFetching ? (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                className="flex-1 flex flex-col items-center justify-center min-h-[300px]"
+              >
+                <div className="w-12 h-12 border-4 border-zinc-200 dark:border-zinc-800 border-t-zinc-900 dark:border-t-white rounded-full animate-spin" />
+                <p className="mt-4 text-xs font-mono font-bold text-zinc-400 uppercase tracking-widest animate-pulse">
+                  Caricamento...
+                </p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key={`grid-${currentDate.toFormat("yyyy-MM")}`}
+                custom={direction}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.3 },
+                  scale: { duration: 0.3 },
+                }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.4}
+                onDragEnd={(_e, { offset, velocity }) => {
+                  const swipe = swipePower(offset.x, velocity.x);
+                  if (swipe < -swipeConfidenceThreshold) handleNextMonth();
+                  else if (swipe > swipeConfidenceThreshold) handlePrevMonth();
+                }}
+                className="grid grid-cols-7 gap-1.5 lg:gap-6 w-full touch-none shrink-0 px-1 py-1"
+              >
+                {daysInMonth.map((day) => {
+                  const isoDate = day.date.toISODate();
+                  if (!isoDate) return null;
+                  const dayEvents = monthlyEvents.filter(
+                    (e) =>
+                      e.date === isoDate &&
+                      !hiddenSubjects.includes(
+                        parseEventTitle(e.title).materia,
+                      ),
+                  );
+                  const isToday = day.date.hasSame(DateTime.now(), "day");
+                  const isCurrentMonth = day.isCurrentMonth;
+                  const uniqueMaterie = Array.from(
+                    new Set(
+                      dayEvents.map((e) => parseEventTitle(e.title).materia),
+                    ),
+                  );
 
-                return (
-                  <button
-                    key={isoDate}
-                    type="button"
-                    onClick={() => {
-                      if (dayEvents.length > 0) {
-                        onDaySelect({
-                          day: day.date.weekday - 1,
-                          dayOfMonth: day.date.day,
-                          date: day.date,
-                          events: dayEvents.map((e) => {
-                            const parsed = parseEventTitle(e.title);
-                            return {
-                              time: e.time,
-                              materia: parsed.materia,
-                              aula: e.location,
-                              docente: e.professor,
-                              tipo: parsed.tipo,
-                              fullDate: e.date ?? undefined,
-                            };
-                          }),
-                        });
-                      }
-                    }}
-                    className={cn(
-                      "relative flex flex-col items-center justify-center aspect-[0.8/1] lg:aspect-square w-full rounded-xl lg:rounded-[2rem] transition-all border shadow-sm",
-                      !isCurrentMonth && "opacity-0 pointer-events-none",
-                      isCurrentMonth &&
-                        "bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800",
-                      isCurrentMonth &&
-                        dayEvents.length > 0 &&
-                        "bg-zinc-50/30 dark:bg-zinc-900/30 border-zinc-200/50 dark:border-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-600 hover:shadow-md active:scale-95 cursor-pointer",
-                      isToday &&
-                        "ring-2 ring-zinc-900 dark:ring-white ring-offset-1 lg:ring-offset-2 dark:ring-offset-black z-10",
-                    )}
-                  >
-                    <span
+                  return (
+                    <button
+                      key={isoDate}
+                      type="button"
+                      onClick={() => {
+                        if (dayEvents.length > 0) {
+                          onDaySelect({
+                            day: day.date.weekday - 1,
+                            dayOfMonth: day.date.day,
+                            date: day.date,
+                            events: dayEvents.map((e) => {
+                              const parsed = parseEventTitle(e.title);
+                              return {
+                                time: e.time,
+                                materia: parsed.materia,
+                                aula: e.location,
+                                docente: e.professor,
+                                tipo: parsed.tipo,
+                                fullDate: e.date ?? undefined,
+                              };
+                            }),
+                          });
+                        }
+                      }}
                       className={cn(
-                        "text-xs lg:text-sm font-mono font-bold leading-none",
-                        isToday
-                          ? "text-zinc-900 dark:text-white"
-                          : "text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100",
-                        uniqueMaterie.length > 0 && "mb-1 lg:mb-2",
+                        "relative flex flex-col items-center justify-center aspect-[0.8/1] lg:aspect-square w-full rounded-xl lg:rounded-[2rem] transition-all border shadow-sm",
+                        !isCurrentMonth && "opacity-0 pointer-events-none",
+                        isCurrentMonth &&
+                          "bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800",
+                        isCurrentMonth &&
+                          dayEvents.length > 0 &&
+                          "bg-zinc-50/30 dark:bg-zinc-900/30 border-zinc-200/50 dark:border-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-600 hover:shadow-md active:scale-95 cursor-pointer",
+                        isToday &&
+                          "ring-2 ring-zinc-900 dark:ring-white ring-offset-1 lg:ring-offset-2 dark:ring-offset-black z-10",
                       )}
                     >
-                      {day.date.day}
-                    </span>
-                    {uniqueMaterie.length > 0 && (
-                      <div className="grid grid-cols-2 gap-1 lg:gap-1.5">
-                        {uniqueMaterie.slice(0, 4).map((materiaName) => (
-                          <div
-                            key={materiaName}
-                            className="w-1.5 h-1.5 lg:w-2.5 lg:h-2.5 rounded-full shadow-sm opacity-90"
-                            style={{
-                              backgroundColor: getMateriaColor(materiaName),
-                            }}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </motion.div>
+                      <span
+                        className={cn(
+                          "text-xs lg:text-sm font-mono font-bold leading-none",
+                          isToday
+                            ? "text-zinc-900 dark:text-white"
+                            : "text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100",
+                          uniqueMaterie.length > 0 && "mb-1 lg:mb-2",
+                        )}
+                      >
+                        {day.date.day}
+                      </span>
+                      {uniqueMaterie.length > 0 && (
+                        <div className="grid grid-cols-2 gap-1 lg:gap-1.5">
+                          {uniqueMaterie.slice(0, 4).map((materiaName) => (
+                            <div
+                              key={materiaName}
+                              className="w-1.5 h-1.5 lg:w-2.5 lg:h-2.5 rounded-full shadow-sm opacity-90"
+                              style={{
+                                backgroundColor: getMateriaColor(materiaName),
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
           </AnimatePresence>
 
-          {}
+          {/* Filters Section - Scrollable */}
           <div className="w-full flex-1 min-h-0 flex flex-col border-t border-zinc-100 dark:border-zinc-900 pt-4">
             <div className="flex items-center gap-3 mb-4 shrink-0 px-2">
               <div className="p-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-black">
@@ -685,6 +719,6 @@ export function MonthlyView({
           <div className="w-3 h-3 border-2 border-zinc-200 dark:border-zinc-800 border-t-zinc-900 dark:border-t-white rounded-full animate-spin" />
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

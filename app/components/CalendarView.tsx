@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Filter,
   LayoutGrid,
+  RotateCcw,
 } from "lucide-react";
 import { DateTime } from "luxon";
 import { useEffect, useMemo, useState } from "react";
@@ -94,23 +95,6 @@ export function CalendarView({
     else if (info.offset.x > threshold) handlePrevWeek();
   };
 
-  const _handleCalendarDragEnd = (_: unknown, info: PanInfo) => {
-    const threshold = 50;
-    if (info.offset.x < -threshold) {
-      setCalendarMonth((prev) => {
-        const d = new Date(prev);
-        d.setMonth(d.getMonth() + 1);
-        return d;
-      });
-    } else if (info.offset.x > threshold) {
-      setCalendarMonth((prev) => {
-        const d = new Date(prev);
-        d.setMonth(d.getMonth() - 1);
-        return d;
-      });
-    }
-  };
-
   const allMaterie = useMemo(
     () => schedule.flatMap((day) => day.events.map((ev) => ev.materia)),
     [schedule],
@@ -174,34 +158,35 @@ export function CalendarView({
   return (
     <div className="w-full flex-1 min-h-0 bg-white dark:bg-black border border-zinc-200 dark:border-zinc-900 rounded-3xl overflow-hidden flex flex-col shadow-sm">
       {isSmallLandscape && (
-        <div className="flex border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/20">
-          <button
-            type="button"
-            onClick={() => setActiveTab("calendar")}
-            className={cn(
-              "flex-1 py-3 px-4 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all",
-              activeTab === "calendar"
-                ? "bg-white dark:bg-black text-zinc-900 dark:text-white"
-                : "text-zinc-400",
-            )}
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            Calendario
-          </button>
-          <div className="w-px bg-zinc-200 dark:border-zinc-800" />
-          <button
-            type="button"
-            onClick={() => setActiveTab("filters")}
-            className={cn(
-              "flex-1 py-3 px-4 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all",
-              activeTab === "filters"
-                ? "bg-white dark:bg-black text-zinc-900 dark:text-white"
-                : "text-zinc-400",
-            )}
-          >
-            <Filter className="w-3.5 h-3.5" />
-            Materie
-          </button>
+        <div className="px-4 py-2 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/20 dark:bg-zinc-900/10 flex justify-center">
+          <div className="flex bg-zinc-100/80 dark:bg-zinc-900/80 p-1 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 backdrop-blur-sm w-full max-w-[300px]">
+            <button
+              type="button"
+              onClick={() => setActiveTab("calendar")}
+              className={cn(
+                "flex-1 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all",
+                activeTab === "calendar"
+                  ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm"
+                  : "text-zinc-400 hover:text-zinc-500",
+              )}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>Calendario</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("filters")}
+              className={cn(
+                "flex-1 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all",
+                activeTab === "filters"
+                  ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm"
+                  : "text-zinc-400 hover:text-zinc-500",
+              )}
+            >
+              <Filter className="w-3.5 h-3.5" />
+              <span>Materie</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -220,13 +205,28 @@ export function CalendarView({
             className="touch-none"
           >
             <div className="px-4 py-2 portrait:p-4 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={handlePrevWeek}
-                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition-all active:scale-90"
-              >
-                <ChevronLeft className="w-5 h-5 text-zinc-400" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={onReset}
+                  className={cn(
+                    "p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all active:scale-90",
+                    weekOffset === 0
+                      ? "opacity-0 pointer-events-none"
+                      : "opacity-100",
+                  )}
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handlePrevWeek}
+                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition-all active:scale-90"
+                >
+                  <ChevronLeft className="w-5 h-5 text-zinc-400" />
+                </button>
+              </div>
 
               <div className="text-center flex flex-col items-center flex-1 mx-2 relative min-h-[40px] justify-center">
                 <AnimatePresence mode="wait">
@@ -287,15 +287,6 @@ export function CalendarView({
                         />
                       </PopoverContent>
                     </Popover>
-                    {weekOffset !== 0 && (
-                      <button
-                        type="button"
-                        onClick={onReset}
-                        className="text-[9px] font-serif italic text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors uppercase tracking-tighter"
-                      >
-                        oggi
-                      </button>
-                    )}
                   </motion.div>
                 </AnimatePresence>
               </div>
