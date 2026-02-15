@@ -45,9 +45,7 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
             if (userId) {
               try {
                 parsedUserId = JSON.parse(userId);
-              } catch (_e) {
-                // Not JSON
-              }
+              } catch (_e) {}
             }
             return {
               ...(adminToken ? { "x-admin-token": adminToken } : {}),

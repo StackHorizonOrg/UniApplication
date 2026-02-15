@@ -1,14 +1,19 @@
+import type { DateTime } from "luxon";
+
 export interface ParsedEvent {
   time: string;
   materia: string;
   aula: string;
   docente: string;
   tipo: string;
+  fullDate?: string;
 }
 
 export interface DaySchedule {
   day: number;
+  dayOfMonth?: number;
   events: ParsedEvent[];
+  date?: DateTime;
 }
 
 const giorni = [

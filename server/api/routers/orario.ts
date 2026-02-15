@@ -101,18 +101,15 @@ const processEvents = (
         eventCity = e.aule[0].edificio.comune;
       }
 
-      // Extract padiglione from aula description if present
       const padiglioneMatch = aulaName.match(/Padiglione\s+([^-]+)/i);
       if (padiglioneMatch) {
         padiglione = `Pad. ${padiglioneMatch[1].trim()}`;
       } else {
-        // Check for full names
         if (aulaName.includes("Morselli")) padiglione = "Pad. Morselli";
         else if (aulaName.includes("Seppilli")) padiglione = "Pad. Seppilli";
         else if (aulaName.includes("Antonini")) padiglione = "Pad. Antonini";
         else if (aulaName.includes("Monte Generoso"))
           padiglione = "Pad. Monte Generoso";
-        // Check for abbreviations (word boundaries to avoid partial matches)
         else if (/\bPM\b/i.test(aulaName) || /\bTM\b/i.test(aulaName))
           padiglione = "Pad. Morselli";
         else if (/\bMTG\b/i.test(aulaName) || /\bMG\b/i.test(aulaName))
@@ -246,6 +243,101 @@ export const orarioRouter = createTRPCRouter({
       if (!input.linkId) return [];
       const rawEvents = await fetchRawEvents(input.dayOffset, input.linkId);
       return processEvents(rawEvents, input.name, input.location);
+    }),
+
+  getMonthlyOrario: publicProcedure
+    .input(
+      z.object({
+        name: z.string().default("INFORMATICA"),
+        location: z.enum(["Varese", "Como", "Tutte"]).default("Tutte"),
+        year: z.number(),
+        month: z.number(),
+        linkId: z.string().optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      if (!input.linkId) return [];
+
+      const startRange = DateTime.fromObject(
+        { year: input.year, month: input.month, day: 1 },
+        { zone: "Europe/Rome" },
+      ).startOf("month");
+      const endRange = startRange.endOf("month");
+
+      const url =
+        "https://unins.prod.up.cineca.it/api/Impegni/getImpegniCalendarioPubblico";
+      const body = {
+        mostraImpegniAnnullati: true,
+        mostraIndisponibilitaTotali: false,
+        linkCalendarioId: input.linkId,
+        clienteId: "59f05192a635f443422fe8fd",
+        pianificazioneTemplate: false,
+        dataInizio: startRange.toISO(),
+        dataFine: endRange.toISO(),
+      };
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          cache: "no-store",
+        });
+
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        const rawData = await response.json();
+        const events: CinecaEvent[] = Array.isArray(rawData)
+          ? rawData
+          : rawData.impegni || [];
+
+        const processed = events
+          .map((e) => {
+            const date = DateTime.fromISO(e.dataInizio).setZone("Europe/Rome");
+            let eventCity = "Unknown";
+            let aulaName = "N/A";
+
+            if (e.aule && e.aule.length > 0) {
+              aulaName = e.aule[0].descrizione;
+              if (e.aule[0].edificio) {
+                eventCity = e.aule[0].edificio.comune;
+              }
+            }
+
+            if (input.location !== "Tutte") {
+              const isVarese =
+                eventCity.toUpperCase().includes("VARESE") ||
+                aulaName.toUpperCase().includes("VARESE");
+              const isComo =
+                eventCity.toUpperCase().includes("COMO") ||
+                aulaName.toUpperCase().includes("COMO");
+              if (input.location === "Varese" && !isVarese) return null;
+              if (input.location === "Como" && !isComo) return null;
+            }
+
+            const start = date.toFormat("HH:mm");
+            const end = DateTime.fromISO(e.dataFine)
+              .setZone("Europe/Rome")
+              .toFormat("HH:mm");
+
+            return {
+              date: date.toISODate(),
+              day: getDayOfWeek(date),
+              time: `${start} - ${end}`,
+              title: e.nome || "Lezione",
+              location: `${aulaName} (${eventCity})`,
+              professor:
+                e.docenti && e.docenti.length > 0
+                  ? `${e.docenti[0].cognome} ${e.docenti[0].nome}`
+                  : "N/A",
+            };
+          })
+          .filter((e): e is NonNullable<typeof e> => e !== null);
+
+        return processed;
+      } catch (error) {
+        console.error("Failed to fetch monthly orario:", error);
+        return [];
+      }
     }),
 
   getNextLesson: publicProcedure

@@ -34,7 +34,6 @@ export const analyticsRouter = createTRPCRouter({
   }),
 
   getDailyRequests: adminProcedure.query(async () => {
-    // Get requests per day for the last 30 days
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 

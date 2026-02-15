@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Inter_Tight, Noto_Serif } from "next/font/google";
+import { Geist, Noto_Serif } from "next/font/google";
 import "@/app/globals.css";
 import type React from "react";
 import { TRPCProvider } from "@/lib/providers";
 
-const interTight = Inter_Tight({
-  variable: "--font-inter-tight",
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
 });
 
 const notoSerif = Noto_Serif({
   variable: "--font-noto-serif",
   subsets: ["latin"],
-  weight: ["400"],
+  weight: ["400", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -32,7 +32,7 @@ export default function RootLayout({
   return (
     <html lang="it" className="light">
       <body
-        className={`${interTight.variable} ${notoSerif.variable} font-sans antialiased bg-white dark:bg-black`}
+        className={`${geistSans.variable} ${notoSerif.variable} font-sans antialiased bg-white dark:bg-black`}
       >
         <TRPCProvider>{children}</TRPCProvider>
       </body>

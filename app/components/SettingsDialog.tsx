@@ -1,16 +1,19 @@
 import {
   AlertCircle,
-  Calendar,
+  BookOpen,
   Check,
   Copy,
-  GraduationCap,
+  Info,
   Link2,
   Plus,
   Save,
   Search,
+  Settings2,
+  ShieldAlert,
   Sparkles,
   X,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AcademicYearPicker } from "@/components/ui/academic-year-picker";
 import {
@@ -41,6 +44,7 @@ export function SettingsDialog({
   forceOpen = false,
   onShowWelcome,
 }: SettingsDialogProps) {
+  const router = useRouter();
   const [calendarId, setCalendarId] = useLocalStorage<string>("calendarId", "");
   const [_courseName, setCourseName] = useLocalStorage<string>(
     "courseName",
@@ -59,7 +63,7 @@ export function SettingsDialog({
   const [previewId, setPreviewId] = useState<string | null>(null);
 
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [isManualEntry, setIsManualEntry] = useState(false);
+  const [activeTab, setActiveTab] = useState<"select" | "add">("select");
   const [newCourseName, setNewCourseName] = useState("");
   const [newCourseYear, setNewCourseYear] = useState<number | "">("");
   const [newAcademicYear, setNewAcademicYear] = useState<string>("");
@@ -95,9 +99,7 @@ export function SettingsDialog({
         const matchedCourse = courses.find((c) => c.linkId === calendarId);
         if (matchedCourse) {
           setSelectedCourse(matchedCourse);
-          setIsManualEntry(false);
-        } else {
-          setIsManualEntry(true);
+          setActiveTab("select");
         }
       }
     }
@@ -162,17 +164,17 @@ export function SettingsDialog({
       return;
     }
 
-    if (isManualEntry && !newCourseName.trim()) {
+    if (activeTab === "add" && !newCourseName.trim()) {
       setError("Inserisci il nome del corso.");
       return;
     }
 
-    if (isManualEntry && newCourseYear === "") {
+    if (activeTab === "add" && newCourseYear === "") {
       setError("Specifica l'anno del corso.");
       return;
     }
 
-    if (isManualEntry && newCourseName.trim()) {
+    if (activeTab === "add" && newCourseName.trim()) {
       try {
         await addCourseMutation.mutateAsync({
           name: newCourseName.trim(),
@@ -215,465 +217,449 @@ export function SettingsDialog({
   const canClose = !forceOpen || (forceOpen && calendarId);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 portrait:p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-2 portrait:p-4 animate-in fade-in duration-200">
       <div
         className={cn(
-          "w-full bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-2xl flex flex-col",
-          "portrait:max-w-lg portrait:max-h-[90vh]",
-          "landscape:max-w-[75vw] landscape:max-h-[85vh]",
+          "w-full bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200",
+          "portrait:max-w-xl portrait:max-h-[90vh]",
+          "landscape:max-w-[80vw] landscape:max-h-[90vh]",
         )}
       >
-        <div className="px-3 py-2 portrait:p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-          <div>
-            <h2 className="text-base portrait:text-xl font-bold text-gray-900 dark:text-white font-serif">
-              Configurazione
-            </h2>
-            <p className="text-[10px] portrait:text-sm text-gray-500 dark:text-gray-400 mt-0.5 portrait:mt-1">
-              Imposta il calendario universitario
-            </p>
+        <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-900 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/20">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-black shadow-md">
+              <Settings2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight font-serif">
+                Configurazione
+              </h2>
+              <p className="text-xs text-zinc-500 font-medium font-serif italic opacity-80">
+                Imposta il tuo percorso di studi
+              </p>
+            </div>
           </div>
           {canClose && (
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 portrait:p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-full transition-colors"
+              className="p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
             >
-              <X className="w-4 h-4 portrait:w-5 portrait:h-5 text-gray-500" />
+              <X className="w-5 h-5 text-zinc-400" />
             </button>
           )}
         </div>
 
-        <div className="px-3 py-2 portrait:p-6 overflow-y-auto space-y-3 portrait:space-y-6">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Seleziona il tuo Corso
-              </h3>
-              <span className="text-xs text-gray-400">
-                {courses.length} disponibili
-              </span>
+        <div className="flex border-b border-zinc-100 dark:border-zinc-900 px-6 bg-white dark:bg-black">
+          <button
+            type="button"
+            onClick={() => setActiveTab("select")}
+            className={cn(
+              "py-4 px-4 text-sm font-bold border-b-2 transition-all relative font-serif",
+              activeTab === "select"
+                ? "border-zinc-900 dark:border-white text-zinc-900 dark:text-white"
+                : "border-transparent text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              <span>Corso Selezionato</span>
             </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("add")}
+            className={cn(
+              "py-4 px-4 text-sm font-bold border-b-2 transition-all relative font-serif",
+              activeTab === "add"
+                ? "border-zinc-900 dark:border-white text-zinc-900 dark:text-white"
+                : "border-transparent text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              <span>Nuovo Corso</span>
+            </div>
+          </button>
+        </div>
 
-            {courses.length > 3 && (
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cerca corso..."
-                  className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-white focus:outline-none transition-all text-sm"
-                />
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <div className="p-6 space-y-8">
+            {activeTab === "select" ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 font-serif">
+                    <Search className="w-4 h-4 text-zinc-400" />
+                    Trova il tuo corso
+                  </h3>
+                  <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
+                    {courses.length} disponibili
+                  </span>
+                </div>
+
+                <div className="relative group">
+                  <input
+                    type="text"
+                    id="course-search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Inizia a scrivere il nome del corso..."
+                    className="w-full pl-11 pr-4 py-3.5 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:outline-none transition-all text-sm font-medium"
+                  />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                </div>
+
+                <div className="grid grid-cols-1 gap-2.5 max-h-[350px] overflow-y-auto pr-1 custom-scrollbar">
+                  {courses
+                    .filter((course) =>
+                      course.name
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()),
+                    )
+                    .map((course) => (
+                      <div key={course.id} className="relative group">
+                        <button
+                          type="button"
+                          className={cn(
+                            "w-full flex flex-col gap-2 p-4 pr-14 rounded-2xl border transition-all text-left relative overflow-hidden",
+                            selectedCourse?.id === course.id
+                              ? "bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white shadow-lg shadow-zinc-200 dark:shadow-none"
+                              : "bg-white dark:bg-black border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900/50",
+                          )}
+                          onClick={() => {
+                            setSelectedCourse(course);
+                            setPreviewId(course.linkId);
+                            setCalendarUrl("");
+                            setError(null);
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={cn(
+                                "w-2.5 h-2.5 rounded-full border-2 transition-colors shrink-0",
+                                selectedCourse?.id === course.id
+                                  ? "border-white dark:border-black bg-white dark:bg-black"
+                                  : "border-zinc-300 dark:border-zinc-700",
+                              )}
+                            />
+                            <span
+                              className={cn(
+                                "font-bold text-sm truncate",
+                                selectedCourse?.id === course.id
+                                  ? "text-white dark:text-black"
+                                  : "text-zinc-900 dark:text-white",
+                              )}
+                            >
+                              {course.name}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 ml-5.5">
+                            {course.year && (
+                              <span
+                                className={cn(
+                                  "text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-tight border font-mono",
+                                  selectedCourse?.id === course.id
+                                    ? "bg-white/10 border-white/20 text-white dark:text-black"
+                                    : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400",
+                                )}
+                              >
+                                {course.year}° Anno
+                              </span>
+                            )}
+                            {course.academicYear && (
+                              <span
+                                className={cn(
+                                  "text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-tight border font-mono",
+                                  selectedCourse?.id === course.id
+                                    ? "bg-white/10 border-white/20 text-white dark:text-black"
+                                    : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400",
+                                )}
+                              >
+                                {course.academicYear}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopyCourseLink(course.linkId, course.id, e);
+                          }}
+                          className={cn(
+                            "absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-all shrink-0 z-10",
+                            copiedCourseId === course.id
+                              ? selectedCourse?.id === course.id
+                                ? "bg-white/20 text-white dark:text-black"
+                                : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
+                              : selectedCourse?.id === course.id
+                                ? "bg-white/10 text-white dark:text-black hover:bg-white/20"
+                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-white",
+                          )}
+                        >
+                          {copiedCourseId === course.id ? (
+                            <Check className="w-4 h-4" />
+                          ) : (
+                            <Link2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                <div className="bg-zinc-900 dark:bg-white rounded-3xl p-5 text-white dark:text-black shadow-xl relative overflow-hidden border border-white/10 dark:border-black/10">
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-2 mb-2 font-serif italic">
+                      <Info className="w-4 h-4 opacity-70" />
+                      <h4 className="text-xs font-bold uppercase tracking-widest">
+                        Nota Bene
+                      </h4>
+                    </div>
+                    <p className="text-sm font-medium leading-relaxed opacity-90 font-serif">
+                      Il corso sarà in stato{" "}
+                      <span className="underline decoration-2 underline-offset-4 font-bold">
+                        In Attesa
+                      </span>{" "}
+                      fino all'approvazione. Potrai utilizzarlo subito, ma sarà
+                      visibile agli altri solo dopo la verifica.
+                    </p>
+                  </div>
+                  <Plus className="absolute -right-4 -bottom-4 w-24 h-24 opacity-10 rotate-12" />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="new-course-name"
+                      className="text-xs font-bold text-zinc-500 uppercase ml-1 font-mono tracking-tighter"
+                    >
+                      Nome del Corso
+                    </label>
+                    <input
+                      type="text"
+                      id="new-course-name"
+                      value={newCourseName}
+                      onChange={(e) => setNewCourseName(e.target.value)}
+                      placeholder="Es: Informatica - Varese"
+                      className="w-full px-5 py-3.5 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:outline-none transition-all text-sm font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between px-1">
+                      <label
+                        htmlFor="calendar-url"
+                        className="text-xs font-bold text-zinc-500 uppercase font-mono tracking-tighter"
+                      >
+                        Link Calendario Cineca
+                      </label>
+                      {previewId && (
+                        <button
+                          type="button"
+                          onClick={handleCopyLink}
+                          className={cn(
+                            "flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold transition-all uppercase tracking-tight font-mono",
+                            copiedLink
+                              ? "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300"
+                              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400",
+                          )}
+                        >
+                          {copiedLink ? (
+                            <Check className="w-3 h-3" />
+                          ) : (
+                            <Copy className="w-3 h-3" />
+                          )}
+                          {copiedLink ? "Copiato" : "Copia"}
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative group">
+                      <input
+                        type="text"
+                        id="calendar-url"
+                        value={calendarUrl}
+                        onChange={handleUrlChange}
+                        placeholder="Incolla l'URL completo del calendario..."
+                        className="w-full pl-11 pr-4 py-3.5 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-2xl focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white focus:outline-none transition-all font-mono text-xs"
+                      />
+                      <Link2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 group-focus-within:text-zinc-900 dark:group-focus-within:text-white transition-colors" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="course-year-select"
+                        className="block text-xs font-bold text-zinc-500 uppercase ml-1 font-mono tracking-tighter"
+                      >
+                        Anno
+                      </label>
+                      <Select
+                        value={
+                          newCourseYear === "" ? "" : String(newCourseYear)
+                        }
+                        onValueChange={(value) =>
+                          setNewCourseYear(value === "" ? "" : Number(value))
+                        }
+                      >
+                        <SelectTrigger
+                          id="course-year-select"
+                          className="h-13 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 font-medium font-serif"
+                        >
+                          <SelectValue placeholder="Seleziona..." />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl">
+                          {[1, 2, 3, 4, 5, 6].map((y) => (
+                            <SelectItem
+                              key={y}
+                              value={String(y)}
+                              className="rounded-xl font-serif"
+                            >
+                              {y}° Anno
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="academic-year-picker"
+                        className="block text-xs font-bold text-zinc-500 uppercase ml-1 font-mono tracking-tighter"
+                      >
+                        Anno Accademico
+                      </label>
+                      <AcademicYearPicker
+                        id="academic-year-picker"
+                        value={newAcademicYear}
+                        onChange={setNewAcademicYear}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
-            <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
-              {courses
-                .filter((course) =>
-                  course.name.toLowerCase().includes(searchQuery.toLowerCase()),
-                )
-                .map((course) => (
-                  <div key={course.id} className="relative">
-                    <button
-                      type="button"
-                      className={cn(
-                        "w-full flex items-center gap-2.5 p-2.5 pr-12 rounded-lg border transition-all group text-left",
-                        selectedCourse?.id === course.id && !isManualEntry
-                          ? "bg-black dark:bg-white border-black dark:border-white"
-                          : "bg-white dark:bg-black border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700",
-                      )}
-                      onClick={() => {
-                        setSelectedCourse(course);
-                        setIsManualEntry(false);
-                        setPreviewId(course.linkId);
-                        setCalendarUrl("");
-                        setError(null);
-                      }}
-                    >
+            {previewId && (
+              <div className="space-y-4 pt-6 border-t border-zinc-100 dark:border-zinc-900">
+                <div className="flex items-center justify-between px-1">
+                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 font-serif">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    Materie Rilevate
+                  </h3>
+                  <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
+                    {isLoading
+                      ? "Analisi..."
+                      : `${availableSubjects?.length || 0} materie`}
+                  </span>
+                </div>
+
+                {isLoading ? (
+                  <div className="grid grid-cols-1 gap-2 animate-pulse">
+                    {[1, 2, 3].map((i) => (
                       <div
-                        className={cn(
-                          "w-4 h-4 rounded-full flex items-center justify-center border-2 transition-colors shrink-0",
-                          selectedCourse?.id === course.id && !isManualEntry
-                            ? "border-white dark:border-black bg-white dark:bg-black"
-                            : "border-gray-300 dark:border-gray-700",
-                        )}
-                      >
-                        {selectedCourse?.id === course.id && !isManualEntry && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-black dark:bg-white" />
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0 flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "font-medium text-sm truncate",
-                            selectedCourse?.id === course.id && !isManualEntry
-                              ? "text-white dark:text-black"
-                              : "text-gray-900 dark:text-white",
-                          )}
-                          title={course.name}
-                        >
-                          {course.name}
-                        </span>
-
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {course.year && (
-                            <div
-                              className={cn(
-                                "flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border font-medium whitespace-nowrap",
-                                selectedCourse?.id === course.id &&
-                                  !isManualEntry
-                                  ? "bg-white/10 dark:bg-black/10 border-white/20 dark:border-black/20 text-white dark:text-black"
-                                  : "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-900 text-purple-700 dark:text-purple-300",
-                              )}
-                            >
-                              <GraduationCap className="w-2.5 h-2.5" />
-                              {course.year}°
-                            </div>
-                          )}
-                          {course.academicYear && (
-                            <div
-                              className={cn(
-                                "flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border font-medium whitespace-nowrap",
-                                selectedCourse?.id === course.id &&
-                                  !isManualEntry
-                                  ? "bg-white/10 dark:bg-black/10 border-white/20 dark:border-black/20 text-white dark:text-black"
-                                  : "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300",
-                              )}
-                            >
-                              <Calendar className="w-2.5 h-2.5" />
-                              {course.academicYear}
-                            </div>
-                          )}
-                          {course.status === "pending" && (
-                            <span
-                              className={cn(
-                                "text-[10px] px-1.5 py-0.5 rounded border font-medium whitespace-nowrap",
-                                selectedCourse?.id === course.id &&
-                                  !isManualEntry
-                                  ? "bg-white/10 dark:bg-black/10 border-white/20 dark:border-black/20 text-white dark:text-black"
-                                  : "bg-yellow-50 dark:bg-yellow-950/50 border-yellow-200 dark:border-yellow-900 text-yellow-700 dark:text-yellow-300",
-                              )}
-                            >
-                              Attesa
-                            </span>
-                          )}
-                          {course.status === "rejected" && (
-                            <span
-                              className={cn(
-                                "text-[10px] px-1.5 py-0.5 rounded border font-medium whitespace-nowrap",
-                                selectedCourse?.id === course.id &&
-                                  !isManualEntry
-                                  ? "bg-white/10 dark:bg-black/10 border-white/20 dark:border-black/20 text-white dark:text-black"
-                                  : "bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-900 text-red-700 dark:text-red-300",
-                              )}
-                            >
-                              ✕ Rifiutato
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCopyCourseLink(course.linkId, course.id, e);
-                      }}
-                      className={cn(
-                        "absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded transition-all shrink-0 z-10",
-                        copiedCourseId === course.id
-                          ? selectedCourse?.id === course.id && !isManualEntry
-                            ? "bg-white/20 dark:bg-black/20 text-white dark:text-black"
-                            : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
-                          : selectedCourse?.id === course.id && !isManualEntry
-                            ? "bg-white/10 dark:bg-black/10 text-white dark:text-black hover:bg-white/20 dark:hover:bg-black/20"
-                            : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
-                      )}
-                      title={
-                        copiedCourseId === course.id
-                          ? "Link Copiato!"
-                          : "Copia Link Cineca"
-                      }
-                    >
-                      {copiedCourseId === course.id ? (
-                        <Check className="w-3.5 h-3.5" />
-                      ) : (
-                        <Link2 className="w-3.5 h-3.5" />
-                      )}
-                    </button>
+                        key={i}
+                        className="h-12 bg-zinc-100 dark:bg-zinc-900 rounded-2xl"
+                      />
+                    ))}
                   </div>
-                ))}
+                ) : availableSubjects && availableSubjects.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                    {availableSubjects.map((subject) => {
+                      const isHidden = hiddenSubjects.includes(subject);
+                      return (
+                        <button
+                          type="button"
+                          key={subject}
+                          onClick={() => toggleSubject(subject)}
+                          className={cn(
+                            "flex items-center gap-3 p-4 rounded-2xl border transition-all text-left",
+                            isHidden
+                              ? "bg-zinc-50 dark:bg-zinc-900/20 border-zinc-100 dark:border-zinc-900 text-zinc-400"
+                              : "bg-white dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white hover:border-zinc-300 dark:hover:border-zinc-700",
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              "w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-colors",
+                              isHidden
+                                ? "border-zinc-200 dark:border-zinc-800"
+                                : "bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white",
+                            )}
+                          >
+                            {!isHidden && (
+                              <Check className="w-3.5 h-3.5 text-white dark:text-black stroke-[3]" />
+                            )}
+                          </div>
+                          <span className="text-xs font-mono font-bold truncate flex-1 uppercase tracking-tight">
+                            {subject.toLowerCase()}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-10 rounded-3xl border-2 border-dashed border-zinc-100 dark:border-zinc-900 font-serif italic text-zinc-400 text-sm">
+                    Nessuna materia trovata per i prossimi 6 mesi.
+                  </div>
+                )}
+              </div>
+            )}
 
+            {error && (
+              <div className="flex items-center gap-3 text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-950/30 p-4 rounded-2xl border border-red-100 dark:border-red-900/50 animate-in shake-1 duration-300">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="font-bold tracking-tight font-serif">
+                  {error}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/20 flex flex-col gap-3">
+          <div className="flex gap-3">
+            {onShowWelcome && (
               <button
                 type="button"
                 onClick={() => {
-                  setIsManualEntry(true);
-                  setSelectedCourse(null);
-                  setPreviewId(null);
-                  setCalendarUrl("");
-                  setNewCourseName("");
-                  setNewCourseYear("");
-                  setNewAcademicYear("");
-                  setError(null);
-                  setCopiedLink(false);
+                  onClose();
+                  onShowWelcome();
                 }}
-                className={cn(
-                  "w-full flex items-center gap-3 p-3 rounded-lg border text-left transition-all",
-                  isManualEntry
-                    ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white"
-                    : "bg-white dark:bg-black border-dashed border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white hover:border-gray-400 dark:hover:border-gray-600",
-                )}
+                className="flex-1 flex items-center justify-center gap-2 bg-white dark:bg-black text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-800 py-3 rounded-2xl font-bold hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-sm shadow-sm active:scale-[0.98] font-serif"
               >
-                <div
-                  className={cn(
-                    "w-5 h-5 rounded-full flex items-center justify-center border-2 transition-colors flex-shrink-0",
-                    isManualEntry
-                      ? "border-white dark:border-black bg-white dark:bg-black"
-                      : "border-gray-300 dark:border-gray-700",
-                  )}
-                >
-                  {isManualEntry && (
-                    <div className="w-2 h-2 rounded-full bg-black dark:bg-white" />
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Plus className="w-4 h-4" />
-                  <span className="font-medium text-sm">
-                    Aggiungi nuovo corso
-                  </span>
-                </div>
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>Novità</span>
               </button>
-            </div>
+            )}
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!previewId}
+              className="flex-[2] flex items-center justify-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-black py-3 rounded-2xl font-extrabold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm shadow-lg active:scale-[0.98] font-mono uppercase tracking-widest"
+            >
+              <Save className="w-4 h-4" />
+              <span>Salva</span>
+            </button>
           </div>
 
-          {isManualEntry && (
-            <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-800">
-              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-lg p-3">
-                <p className="text-xs text-blue-900 dark:text-blue-300">
-                  Il corso sarà in stato "In Attesa" fino all'approvazione da
-                  parte di un amministratore. Potrai utilizzarlo subito, ma sarà
-                  visibile agli altri utenti solo dopo l'approvazione.
-                </p>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="course-name-input"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                >
-                  Nome del Corso *
-                </label>
-                <input
-                  id="course-name-input"
-                  type="text"
-                  value={newCourseName}
-                  onChange={(e) => setNewCourseName(e.target.value)}
-                  placeholder="Es: Informatica - Varese"
-                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-white focus:outline-none transition-all text-sm"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label
-                    htmlFor="calendar-url-input"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    Link Pubblico Calendario (Cineca) *
-                  </label>
-                  {(calendarUrl || previewId) && (
-                    <button
-                      type="button"
-                      onClick={handleCopyLink}
-                      className={cn(
-                        "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all",
-                        copiedLink
-                          ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-700"
-                          : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700",
-                      )}
-                    >
-                      {copiedLink ? (
-                        <>
-                          <Check className="w-3 h-3" />
-                          Copiato!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3 h-3" />
-                          Copia Link
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-                <div className="relative">
-                  <input
-                    id="calendar-url-input"
-                    type="text"
-                    value={calendarUrl}
-                    onChange={handleUrlChange}
-                    placeholder="https://.../getImpegniCalendarioPubblico?linkCalendarioId=..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg focus:ring-2 focus:ring-black dark:focus:ring-white focus:outline-none transition-all font-mono text-xs"
-                  />
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-                  Incolla l'URL completo del calendario pubblico fornito
-                  dall'università
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label
-                    htmlFor="course-year-input"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                  >
-                    Anno del Corso *
-                  </label>
-                  <Select
-                    value={newCourseYear === "" ? "" : String(newCourseYear)}
-                    onValueChange={(value) =>
-                      setNewCourseYear(value === "" ? "" : Number(value))
-                    }
-                  >
-                    <SelectTrigger
-                      id="course-year-input"
-                      className="bg-gray-50 dark:bg-gray-900 h-11"
-                    >
-                      <SelectValue placeholder="Seleziona anno..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1° Anno</SelectItem>
-                      <SelectItem value="2">2° Anno</SelectItem>
-                      <SelectItem value="3">3° Anno</SelectItem>
-                      <SelectItem value="4">4° Anno</SelectItem>
-                      <SelectItem value="5">5° Anno</SelectItem>
-                      <SelectItem value="6">6° Anno</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="academic-year-input"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                  >
-                    Anno Accademico
-                  </label>
-                  <AcademicYearPicker
-                    value={newAcademicYear}
-                    onChange={setNewAcademicYear}
-                  />
-                </div>
-              </div>
-
-              {error && (
-                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-900">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {previewId && (
-            <div className="space-y-3 pt-4 border-t border-dashed border-gray-200 dark:border-gray-800">
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="subjects-preview"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Materie Rilevate
-                </label>
-                <span className="text-xs text-gray-400 font-mono">
-                  {isLoading
-                    ? "Caricamento..."
-                    : `${availableSubjects?.length || 0} trovate`}
-                </span>
-              </div>
-
-              {isLoading ? (
-                <div className="space-y-2 animate-pulse">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="h-10 bg-gray-100 dark:bg-gray-800 rounded-lg"
-                    />
-                  ))}
-                </div>
-              ) : availableSubjects && availableSubjects.length > 0 ? (
-                <div
-                  id="subjects-preview"
-                  className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto pr-2"
-                >
-                  {availableSubjects.map((subject) => {
-                    const isHidden = hiddenSubjects.includes(subject);
-                    return (
-                      <button
-                        type="button"
-                        key={subject}
-                        onClick={() => toggleSubject(subject)}
-                        className={cn(
-                          "flex items-center gap-3 p-3 rounded-lg border text-left transition-all",
-                          isHidden
-                            ? "bg-gray-50 dark:bg-gray-900/50 border-gray-100 dark:border-gray-800 text-gray-400"
-                            : "bg-white dark:bg-black border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white shadow-sm hover:border-gray-300 dark:hover:border-gray-700",
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            "w-5 h-5 rounded flex items-center justify-center border transition-colors",
-                            isHidden
-                              ? "border-gray-300 dark:border-gray-700"
-                              : "bg-black dark:bg-white border-black dark:border-white",
-                          )}
-                        >
-                          {!isHidden && (
-                            <Check className="w-3 h-3 text-white dark:text-black" />
-                          )}
-                        </div>
-                        <span className="text-xs font-mono truncate flex-1 uppercase">
-                          {subject.toLowerCase()}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-400 text-sm border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-xl">
-                  Nessuna materia trovata per i prossimi 6 mesi.
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="px-3 py-2 portrait:p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/20 space-y-2 portrait:space-y-3">
-          {onShowWelcome && (
+          <div className="flex justify-center pt-2">
             <button
               type="button"
               onClick={() => {
                 onClose();
-                onShowWelcome();
+                router.push("/admin");
               }}
-              className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-800 py-2 portrait:py-2.5 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-xs portrait:text-sm"
+              className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors uppercase tracking-widest"
             >
-              <Sparkles className="w-3.5 h-3.5 portrait:w-4 portrait:h-4" />
-              Rivedi Novità V2
+              <ShieldAlert className="w-3 h-3" />
+              <span>Pannello Admin</span>
             </button>
-          )}
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!previewId}
-            className="w-full flex items-center justify-center gap-2 bg-black dark:bg-white text-white dark:text-black py-2.5 portrait:py-3 rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed text-xs portrait:text-sm"
-          >
-            <Save className="w-3.5 h-3.5 portrait:w-4 portrait:h-4" />
-            Salva e Continua
-          </button>
+          </div>
         </div>
       </div>
     </div>

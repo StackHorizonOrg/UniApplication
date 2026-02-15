@@ -102,8 +102,7 @@ export default function NextLessonCard({
   useEffect(() => {
     const check = () =>
       setIsLandscape(
-        window.matchMedia("(max-height: 500px) and (orientation: landscape)")
-          .matches,
+        window.innerWidth > window.innerHeight && window.innerHeight < 600,
       );
     check();
     window.addEventListener("resize", check);
@@ -147,7 +146,7 @@ export default function NextLessonCard({
   const getDate = (offset: number): string => {
     const d = new Date();
     d.setDate(d.getDate() + offset);
-    return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+    return `${d.getDate()}/${d.getMonth() + 1}`;
   };
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -168,9 +167,24 @@ export default function NextLessonCard({
   };
 
   const variants = {
-    enter: (d: number) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (d: number) => ({ x: d < 0 ? "100%" : "-100%", opacity: 0 }),
+    enter: (d: number) => ({
+      x: d > 0 ? "20%" : "-20%",
+      opacity: 0,
+      scale: 0.95,
+      filter: "blur(4px)",
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+      scale: 1,
+      filter: "blur(0px)",
+    },
+    exit: (d: number) => ({
+      x: d < 0 ? "20%" : "-20%",
+      opacity: 0,
+      scale: 0.95,
+      filter: "blur(4px)",
+    }),
   };
 
   const displayIndex = Math.max(
@@ -179,229 +193,263 @@ export default function NextLessonCard({
   );
   const currentLesson = displayedLessons[displayIndex];
 
-  const Skeleton = () => (
-    <div className="absolute inset-0 flex flex-col p-4 lg:p-6 animate-pulse">
-      <div className="h-8 mb-4">
-        <div className="w-16 h-4 bg-gray-100 dark:bg-gray-900 rounded-full" />
-      </div>
-      <div className="flex-1 flex flex-col justify-center">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-4 h-4 bg-gray-100 dark:bg-gray-900 rounded" />
-          <div className="w-24 h-6 bg-gray-100 dark:bg-gray-900 rounded" />
-        </div>
-        <div className="w-3/4 h-5 bg-gray-100 dark:bg-gray-900 rounded mb-4" />
-        <div className="space-y-2">
-          <div className="w-1/2 h-3 bg-gray-100 dark:bg-gray-900 rounded" />
-          <div className="w-1/3 h-3 bg-gray-100 dark:bg-gray-900 rounded" />
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <motion.div
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.05}
+      dragElastic={0.1}
       onDragEnd={handleDragEnd}
       className={cn(
-        "w-full bg-white dark:bg-black border border-gray-200 dark:border-gray-900 rounded-2xl overflow-hidden flex flex-col touch-none",
-        isLandscape ? "h-full" : "h-fit",
+        "w-full bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden flex flex-col touch-none shadow-sm transition-all duration-300",
+        isLandscape ? "h-full min-h-[140px]" : "h-[280px]",
       )}
     >
-      <div className="p-3 lg:p-4 border-b border-gray-200 dark:border-gray-900 bg-inherit z-20">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 truncate flex-1">
-            <CalendarIcon className="w-4 h-4 text-gray-500" />
-            <span className="text-sm font-mono truncate">
-              {isFetching && !data ? "..." : data?.dayName || "..."}
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            {dayOffset !== 0 && (
+      <div
+        className={cn(
+          "border-b border-zinc-100 dark:border-zinc-900 flex items-center justify-between bg-zinc-50/30 dark:bg-zinc-900/10 z-20 flex-shrink-0",
+          isLandscape ? "p-2 px-4" : "px-4 py-3",
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <Popover
+            open={isCalendarOpen}
+            onOpenChange={(open) => {
+              setIsCalendarOpen(open);
+              if (open) {
+                const d = new Date();
+                d.setDate(d.getDate() + dayOffset);
+                setCalendarMonth(d);
+              }
+            }}
+          >
+            <PopoverTrigger asChild>
               <button
                 type="button"
-                onClick={() => {
-                  setDirection(-1);
-                  setDayOffset(0);
-                }}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all font-serif font-bold text-sm text-zinc-900 dark:text-white shadow-sm",
+                  isLandscape ? "text-xs" : "text-sm",
+                )}
               >
-                <RotateCcw className="w-3.5 h-3.5 text-gray-400" />
+                <span>{data?.dayName || "..."}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
               </button>
-            )}
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-auto p-0 bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden"
+              align="start"
+            >
+              <motion.div
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.2}
+                onDragEnd={handleCalendarDragEnd}
+                className="touch-none"
+              >
+                <Calendar
+                  mode="single"
+                  month={calendarMonth}
+                  onMonthChange={setCalendarMonth}
+                  selected={
+                    new Date(
+                      new Date().setDate(new Date().getDate() + dayOffset),
+                    )
+                  }
+                  onSelect={handleDateSelect}
+                  initialFocus
+                  locale={it}
+                  className="font-mono"
+                />
+              </motion.div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="flex items-center gap-1">
+          {dayOffset !== 0 && (
             <button
               type="button"
-              onClick={handlePrevDay}
-              disabled={dayOffset === 0}
-              className="p-1 disabled:opacity-20"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-
-            <Popover
-              open={isCalendarOpen}
-              onOpenChange={(open) => {
-                setIsCalendarOpen(open);
-                if (open) {
-                  const d = new Date();
-                  d.setDate(d.getDate() + dayOffset);
-                  setCalendarMonth(d);
-                }
+              onClick={() => {
+                setDirection(-1);
+                setDayOffset(0);
               }}
+              className="p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
             >
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className="flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  <span className="text-xs font-mono">
-                    {getDate(dayOffset)}
-                  </span>
-                  <ChevronDown className="w-3 h-3 text-gray-400" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-auto p-0 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden"
-                align="center"
-              >
-                <motion.div
-                  drag="x"
-                  dragConstraints={{ left: 0, right: 0 }}
-                  dragElastic={0.2}
-                  onDragEnd={handleCalendarDragEnd}
-                  className="touch-none"
-                >
-                  <Calendar
-                    mode="single"
-                    month={calendarMonth}
-                    onMonthChange={setCalendarMonth}
-                    selected={
-                      new Date(
-                        new Date().setDate(new Date().getDate() + dayOffset),
-                      )
-                    }
-                    onSelect={handleDateSelect}
-                    initialFocus
-                    locale={it}
-                    className="font-mono"
-                  />
-                </motion.div>
-              </PopoverContent>
-            </Popover>
-
-            <button type="button" onClick={handleNextDay} className="p-1">
-              <ChevronRight className="w-5 h-5" />
+              <RotateCcw className="w-3.5 h-3.5" />
             </button>
-          </div>
+          )}
+          <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1" />
+          <span className="text-[10px] font-mono font-bold text-zinc-400 px-1">
+            {getDate(dayOffset)}
+          </span>
         </div>
       </div>
 
       <div
         className={cn(
-          "flex-1 relative overflow-hidden",
-          isLandscape ? "min-h-[120px]" : "min-h-[180px] lg:min-h-[220px]",
+          "relative overflow-hidden flex-1 flex flex-col",
+          isLandscape ? "p-4" : "p-4 lg:p-5",
         )}
       >
         <AnimatePresence initial={false} custom={direction} mode="popLayout">
           {isFetching && !data ? (
             <motion.div
-              key="skeleton"
-              custom={direction}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              className="absolute inset-0"
+              key="loading"
+              className="absolute inset-0 flex items-center justify-center"
             >
-              <Skeleton />
-            </motion.div>
-          ) : displayedLessons.length === 0 ? (
-            <motion.div
-              key={`empty-${dayOffset}`}
-              custom={direction}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              className="absolute inset-0 flex flex-col items-center justify-center p-6"
-            >
-              <div className="w-12 h-12 border border-black dark:border-white rounded-2xl mb-2 flex items-center justify-center">
-                <div className="w-4 h-4 border border-black dark:border-white" />
-              </div>
-              <p className="text-xs font-mono uppercase">nessuna lezione</p>
+              <div className="w-5 h-5 border-2 border-zinc-200 dark:border-zinc-800 border-t-zinc-900 dark:border-t-white rounded-full animate-spin" />
             </motion.div>
           ) : (
             <motion.div
-              key={`${dayOffset}-${displayIndex}`}
+              key={
+                displayedLessons.length === 0
+                  ? `empty-${dayOffset}`
+                  : `${dayOffset}-${displayIndex}`
+              }
               custom={direction}
               variants={variants}
               initial="enter"
               animate="center"
               exit="exit"
-              className="absolute inset-0 flex flex-col p-4 lg:p-6"
+              transition={{
+                x: { type: "spring", stiffness: 400, damping: 30 },
+                opacity: { duration: 0.2 },
+                scale: { duration: 0.2 },
+              }}
+              className="flex flex-col items-center justify-center flex-1 w-full"
             >
-              {currentLesson && (
-                <>
-                  <div className="h-8">
-                    {data?.nextLesson?.lesson.time === currentLesson.time && (
-                      <span className="text-[10px] font-mono px-2 py-1 rounded-full border border-green-500 text-green-600 uppercase">
-                        in corso
-                      </span>
-                    )}
+              {displayedLessons.length === 0 ? (
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 rounded-[1.5rem] bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center mb-4 border border-zinc-100 dark:border-zinc-800 shadow-sm relative shrink-0">
+                    <CalendarIcon
+                      className="w-8 h-8 text-zinc-300 dark:text-zinc-700"
+                      strokeWidth={1.5}
+                    />
                   </div>
-                  <div className="flex-1 flex flex-col justify-center">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Clock className="w-4 h-4" />
-                      <span className="text-lg font-mono font-bold">
+                  <p
+                    className={cn(
+                      "font-serif font-bold text-zinc-900 dark:text-white tracking-tight leading-none",
+                      isLandscape ? "text-base" : "text-lg",
+                    )}
+                  >
+                    Nessuna lezione
+                  </p>
+                  <p className="mt-2 text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-[0.2em]">
+                    Libero
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col h-full w-full">
+                  <div
+                    className={cn(
+                      "flex items-center justify-between",
+                      isLandscape ? "mb-2" : "mb-3",
+                    )}
+                  >
+                    <div className="flex items-center gap-2 text-zinc-900 dark:text-white">
+                      <Clock
+                        className={cn(
+                          "opacity-40",
+                          isLandscape ? "w-3.5 h-3.5" : "w-4 h-4",
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          "font-semibold font-serif tracking-tight",
+                          isLandscape ? "text-base" : "text-xl",
+                        )}
+                      >
                         {currentLesson.time}
                       </span>
                     </div>
-                    <h3 className="text-base lg:text-lg font-serif leading-tight mb-4">
-                      {currentLesson.title.toLowerCase()}
-                    </h3>
-                    <div className="space-y-1.5 opacity-60">
-                      {currentLesson.location && (
-                        <div className="flex items-center gap-2 text-xs font-mono">
-                          <MapPin className="w-3 h-3 shrink-0" />
-                          {currentLesson.location.toLowerCase()}
-                        </div>
+                    {dayOffset === 0 &&
+                      data?.nextLesson?.lesson.time === currentLesson.time && (
+                        <span className="flex items-center gap-1 text-[9px] font-bold font-mono px-2 py-0.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-black uppercase tracking-tighter">
+                          Ora
+                        </span>
                       )}
-                      {currentLesson.professor && (
-                        <div className="flex items-center gap-2 text-xs font-mono">
-                          <User className="w-3 h-3 shrink-0" />
-                          {currentLesson.professor.toLowerCase()}
-                        </div>
-                      )}
-                    </div>
                   </div>
-                </>
+
+                  <h3
+                    className={cn(
+                      "font-bold text-zinc-900 dark:text-white leading-tight font-serif line-clamp-3 mb-2",
+                      isLandscape ? "text-base" : "text-lg",
+                    )}
+                  >
+                    {currentLesson.title}
+                  </h3>
+
+                  <div
+                    className={cn(
+                      "space-y-1 mt-auto",
+                      isLandscape ? "flex items-center gap-4 space-y-0" : "",
+                    )}
+                  >
+                    {currentLesson.location && (
+                      <div className="flex items-center gap-2 text-xs text-zinc-500 font-medium font-mono min-w-0">
+                        <MapPin className="w-3 h-3 shrink-0 opacity-50 text-zinc-400" />
+                        <span className="truncate">
+                          {currentLesson.location}
+                        </span>
+                      </div>
+                    )}
+                    {currentLesson.professor && (
+                      <div className="flex items-center gap-2 text-[11px] text-zinc-400 italic font-serif min-w-0">
+                        <User className="w-3 h-3 shrink-0 opacity-40" />
+                        <span className="truncate">
+                          {currentLesson.professor}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      <div className="p-3 border-t border-gray-200 dark:border-gray-900 flex justify-between items-center bg-inherit z-20">
-        <span className="text-[10px] font-mono opacity-50">
-          {displayIndex + 1}/{displayedLessons.length}
-        </span>
+      <div
+        className={cn(
+          "border-t border-zinc-100 dark:border-zinc-900 flex justify-between items-center bg-zinc-50/30 dark:bg-zinc-900/10 flex-shrink-0",
+          isLandscape ? "p-2 px-4" : "px-4 py-3",
+        )}
+      >
+        <div className="flex gap-1.5">
+          {displayedLessons.length > 0 ? (
+            displayedLessons.map((lesson, i) => (
+              <div
+                key={`${lesson.time}-${lesson.title}`}
+                className={cn(
+                  "w-1 h-1 rounded-full transition-all duration-300",
+                  i === displayIndex
+                    ? "bg-zinc-900 dark:bg-white w-3"
+                    : "bg-zinc-200 dark:bg-zinc-800",
+                )}
+              />
+            ))
+          ) : (
+            <div className="w-4 h-1 rounded-full bg-zinc-200 dark:bg-zinc-800 opacity-50" />
+          )}
+        </div>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={handlePrevLesson}
-            disabled={displayIndex === 0}
-            className="p-1 disabled:opacity-20"
+            disabled={displayIndex === 0 || displayedLessons.length <= 1}
+            className="p-1.5 rounded-lg text-zinc-400 disabled:opacity-10 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
           <button
             type="button"
             onClick={handleNextLesson}
-            disabled={displayIndex >= displayedLessons.length - 1}
-            className="p-1 disabled:opacity-20"
+            disabled={
+              displayIndex >= displayedLessons.length - 1 ||
+              displayedLessons.length <= 1
+            }
+            className="p-1.5 rounded-lg text-zinc-400 disabled:opacity-10 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>

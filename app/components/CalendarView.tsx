@@ -4,17 +4,14 @@ import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import {
-  Calendar as CalendarIcon,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Eye,
-  EyeOff,
   Filter,
+  LayoutGrid,
 } from "lucide-react";
 import { DateTime } from "luxon";
-import { useMemo, useState } from "react";
-import { CalendarDayDialog } from "@/app/components/CalendarDayDialog";
+import { useEffect, useMemo, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -57,9 +54,6 @@ export function CalendarView({
   onDaySelect,
   selectedDay,
 }: CalendarViewProps) {
-  const [selectedDayLocal, setSelectedDayLocal] = useState<DaySchedule | null>(
-    null,
-  );
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [hiddenSubjects, setHiddenSubjects] = useLocalStorage<string[]>(
     "hiddenSubjects",
@@ -67,6 +61,23 @@ export function CalendarView({
   );
   const [direction, setDirection] = useState(0);
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+  const [_isMobile, setIsMobile] = useState(false);
+  const [isSmallLandscape, setIsSmallLandscape] = useState(false);
+  const [activeTab, setActiveTab] = useState<"calendar" | "filters">(
+    "calendar",
+  );
+
+  useEffect(() => {
+    const checkSize = () => {
+      setIsMobile(window.innerWidth < 1024);
+      setIsSmallLandscape(
+        window.innerWidth > window.innerHeight && window.innerHeight < 600,
+      );
+    };
+    checkSize();
+    window.addEventListener("resize", checkSize);
+    return () => window.removeEventListener("resize", checkSize);
+  }, []);
 
   const handlePrevWeek = () => {
     setDirection(-1);
@@ -83,7 +94,7 @@ export function CalendarView({
     else if (info.offset.x > threshold) handlePrevWeek();
   };
 
-  const handleCalendarDragEnd = (_: unknown, info: PanInfo) => {
+  const _handleCalendarDragEnd = (_: unknown, info: PanInfo) => {
     const threshold = 50;
     if (info.offset.x < -threshold) {
       setCalendarMonth((prev) => {
@@ -161,9 +172,46 @@ export function CalendarView({
   };
 
   return (
-    <>
-      <div className="w-full flex-1 min-h-0 bg-white dark:bg-black text-gray-900 dark:text-white flex flex-col overflow-hidden">
-        <div className="relative flex-shrink-0 z-20 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black">
+    <div className="w-full flex-1 min-h-0 bg-white dark:bg-black border border-zinc-200 dark:border-zinc-900 rounded-3xl overflow-hidden flex flex-col shadow-sm">
+      {isSmallLandscape && (
+        <div className="flex border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/20">
+          <button
+            type="button"
+            onClick={() => setActiveTab("calendar")}
+            className={cn(
+              "flex-1 py-3 px-4 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all",
+              activeTab === "calendar"
+                ? "bg-white dark:bg-black text-zinc-900 dark:text-white"
+                : "text-zinc-400",
+            )}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            Calendario
+          </button>
+          <div className="w-px bg-zinc-200 dark:border-zinc-800" />
+          <button
+            type="button"
+            onClick={() => setActiveTab("filters")}
+            className={cn(
+              "flex-1 py-3 px-4 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all",
+              activeTab === "filters"
+                ? "bg-white dark:bg-black text-zinc-900 dark:text-white"
+                : "text-zinc-400",
+            )}
+          >
+            <Filter className="w-3.5 h-3.5" />
+            Materie
+          </button>
+        </div>
+      )}
+
+      <div
+        className={cn(
+          "flex-shrink-0 flex flex-col",
+          isSmallLandscape && activeTab !== "calendar" && "hidden",
+        )}
+      >
+        <div className="relative z-20 border-b border-zinc-100 dark:border-zinc-900 bg-white dark:bg-black">
           <motion.div
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
@@ -171,16 +219,16 @@ export function CalendarView({
             onDragEnd={handleDragEnd}
             className="touch-none"
           >
-            <div className="px-3 py-2 portrait:p-4 flex items-center justify-between bg-inherit">
+            <div className="px-4 py-2 portrait:p-4 flex items-center justify-between">
               <button
                 type="button"
                 onClick={handlePrevWeek}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors relative z-30"
+                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition-all active:scale-90"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5 text-zinc-400" />
               </button>
 
-              <div className="text-center flex flex-col items-center flex-1 mx-2 relative h-10 justify-center">
+              <div className="text-center flex flex-col items-center flex-1 mx-2 relative min-h-[40px] justify-center">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={weekOffset}
@@ -200,63 +248,52 @@ export function CalendarView({
                       <PopoverTrigger asChild>
                         <button
                           type="button"
-                          className="flex items-center justify-center gap-1 text-xs portrait:text-sm font-mono uppercase truncate w-full hover:bg-gray-100 dark:hover:bg-gray-900 px-2 py-1 rounded transition-colors"
+                          className="flex items-center justify-center gap-1.5 px-3 py-1 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all font-serif font-bold text-sm"
                         >
-                          <CalendarIcon className="w-3.5 h-3.5" />
                           <span className="truncate">{weekRangeDisplay}</span>
-                          <ChevronDown className="w-3 h-3 text-gray-500" />
+                          <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
                         </button>
                       </PopoverTrigger>
                       <PopoverContent
-                        className="w-auto p-0 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden"
+                        className="w-auto p-0 bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl"
                         align="center"
                       >
-                        <motion.div
-                          drag="x"
-                          dragConstraints={{ left: 0, right: 0 }}
-                          dragElastic={0.2}
-                          onDragEnd={handleCalendarDragEnd}
-                          className="touch-none"
-                        >
-                          <Calendar
-                            mode="single"
-                            month={calendarMonth}
-                            onMonthChange={setCalendarMonth}
-                            selected={baseDate.toJSDate()}
-                            onSelect={(d) => {
-                              if (d) {
-                                const diff = Math.floor(
-                                  DateTime.fromJSDate(d)
-                                    .minus({
-                                      days: getDayOfWeek(
-                                        DateTime.fromJSDate(d),
-                                      ),
-                                    })
-                                    .diff(
-                                      today.minus({
-                                        days: getDayOfWeek(today),
-                                      }),
-                                      "days",
-                                    ).days,
-                                );
-                                setDirection(diff > weekOffset ? 1 : -1);
-                                onSetOffset(diff);
-                                setIsCalendarOpen(false);
-                              }
-                            }}
-                            locale={it}
-                            className="font-mono"
-                          />
-                        </motion.div>
+                        <Calendar
+                          mode="single"
+                          month={calendarMonth}
+                          onMonthChange={setCalendarMonth}
+                          selected={baseDate.toJSDate()}
+                          onSelect={(d) => {
+                            if (d) {
+                              const diff = Math.floor(
+                                DateTime.fromJSDate(d)
+                                  .minus({
+                                    days: getDayOfWeek(DateTime.fromJSDate(d)),
+                                  })
+                                  .diff(
+                                    today.minus({
+                                      days: getDayOfWeek(today),
+                                    }),
+                                    "days",
+                                  ).days,
+                              );
+                              setDirection(diff > weekOffset ? 1 : -1);
+                              onSetOffset(diff);
+                              setIsCalendarOpen(false);
+                            }
+                          }}
+                          locale={it}
+                          className="font-mono"
+                        />
                       </PopoverContent>
                     </Popover>
                     {weekOffset !== 0 && (
                       <button
                         type="button"
                         onClick={onReset}
-                        className="text-[9px] uppercase opacity-50 font-mono hover:opacity-100"
+                        className="text-[9px] font-serif italic text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors uppercase tracking-tighter"
                       >
-                        Torna a oggi
+                        oggi
                       </button>
                     )}
                   </motion.div>
@@ -266,18 +303,18 @@ export function CalendarView({
               <button
                 type="button"
                 onClick={handleNextWeek}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors relative z-30"
+                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition-all active:scale-90"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-5 h-5 text-zinc-400" />
               </button>
             </div>
 
-            <div className="px-3 portrait:px-4 lg:px-6 pb-2">
+            <div className="px-4 portrait:px-6 pb-3">
               <div className="grid grid-cols-7 gap-1 mb-2">
                 {["lun", "mar", "mer", "gio", "ven", "sab", "dom"].map(
                   (h, i) => (
                     <div key={h} className="text-center">
-                      <span className="text-[9px] landscape:text-[8px] portrait:text-[10px] font-mono opacity-40">
+                      <span className="text-[9px] font-mono font-bold uppercase tracking-tighter opacity-20">
                         {weekDayHeaders[i]}
                       </span>
                     </div>
@@ -285,7 +322,7 @@ export function CalendarView({
                 )}
               </div>
 
-              <div className="relative h-[56px] portrait:h-[76px] overflow-hidden">
+              <div className="relative h-[50px] portrait:h-[70px]">
                 <AnimatePresence
                   initial={false}
                   custom={direction}
@@ -299,56 +336,71 @@ export function CalendarView({
                     animate="center"
                     exit="exit"
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="grid grid-cols-7 gap-1 portrait:gap-2 absolute inset-0 p-0.5"
+                    className="grid grid-cols-7 gap-2 absolute inset-0 p-1"
                   >
                     {weekDays.map((dayData) => {
                       const isToday = dayData.date.hasSame(today, "day");
-                      const isSelected =
-                        selectedDay?.day === dayData.day ||
-                        selectedDayLocal?.day === dayData.day;
+                      const isSelected = selectedDay?.day === dayData.day;
                       return (
                         <button
                           key={dayData.day}
                           type="button"
                           onClick={() => {
                             if (dayData.hasEvents) {
-                              setSelectedDayLocal({
-                                day: dayData.day,
-                                events: dayData.events,
-                              });
                               if (onDaySelect) onDaySelect(dayData);
                             }
                           }}
                           className={cn(
-                            "relative aspect-square flex flex-col items-center justify-center rounded-lg transition-all max-w-[48px] mx-auto w-full",
+                            "relative flex flex-col items-center justify-between py-1.5 lg:py-3 aspect-square flex-1 rounded-xl transition-all border",
                             dayData.hasEvents
-                              ? "bg-gray-50 dark:bg-gray-900"
-                              : "opacity-20",
+                              ? isSelected
+                                ? "bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white shadow-md shadow-zinc-200 dark:shadow-none"
+                                : "bg-zinc-50 dark:bg-zinc-900/50 border-zinc-100 dark:border-zinc-800"
+                              : "opacity-20 border-transparent",
                             isToday &&
-                              "ring-2 ring-black dark:ring-white bg-white dark:bg-black z-10",
-                            isSelected && !isToday && "ring-2 ring-gray-400",
+                              !isSelected &&
+                              "ring-2 ring-zinc-900 dark:ring-white ring-offset-2 dark:ring-offset-black",
                           )}
                         >
-                          <span className="text-[10px] landscape:text-[9px] portrait:text-sm font-mono">
+                          <span
+                            className={cn(
+                              "text-[10px] portrait:text-sm font-mono font-bold",
+                              isSelected
+                                ? "text-white dark:text-black"
+                                : "text-zinc-900 dark:text-zinc-100",
+                            )}
+                          >
                             {dayData.dayOfMonth}
                           </span>
-                          {dayData.hasEvents && (
-                            <div className="flex gap-0.5 mt-0.5">
-                              {Array.from(
-                                new Set(dayData.events.map((e) => e.materia)),
-                              )
-                                .slice(0, 3)
-                                .map((m) => (
-                                  <div
-                                    key={m}
-                                    className="w-1 h-1 rounded-full"
-                                    style={{
-                                      backgroundColor: getMateriaColor(m),
-                                    }}
-                                  />
-                                ))}
-                            </div>
-                          )}
+                          <div className="flex flex-col items-center h-4 lg:h-6 justify-center mb-0.5">
+                            {dayData.hasEvents && (
+                              <div className="grid grid-cols-2 gap-0.5 lg:gap-1">
+                                {Array.from(
+                                  new Set(dayData.events.map((e) => e.materia)),
+                                )
+                                  .slice(0, 4)
+                                  .map((m) => (
+                                    <div
+                                      key={m}
+                                      className={cn(
+                                        "w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-[1px]",
+                                        isSelected
+                                          ? "bg-white/50 dark:bg-black/50"
+                                          : "",
+                                      )}
+                                      style={
+                                        !isSelected
+                                          ? {
+                                              backgroundColor:
+                                                getMateriaColor(m),
+                                            }
+                                          : {}
+                                      }
+                                    />
+                                  ))}
+                              </div>
+                            )}
+                          </div>
                         </button>
                       );
                     })}
@@ -358,67 +410,53 @@ export function CalendarView({
             </div>
           </motion.div>
         </div>
+      </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="px-4 pt-2 pb-6">
-            <div className="border-b border-dashed border-gray-200 dark:border-gray-800 pt-4 pb-2 mb-3 flex items-center gap-2 sticky top-0 bg-white dark:bg-black z-10">
-              <Filter className="w-3 h-3 text-gray-400" />
-              <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">
-                Filtra Materie
-              </span>
+      <div
+        className={cn(
+          "flex-1 min-h-0 overflow-y-auto custom-scrollbar",
+          isSmallLandscape && activeTab !== "filters" && "hidden",
+        )}
+      >
+        <div className="px-5 pb-20">
+          <div className="border-b border-zinc-100 dark:border-zinc-900 py-3.5 flex items-center gap-2 sticky top-0 bg-white dark:bg-black z-10 mb-4">
+            <div className="p-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-black shrink-0">
+              <Filter className="w-3.5 h-3.5" />
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-              {Array.from(new Set(allMaterie))
-                .sort()
-                .map((materia) => {
-                  const isHidden = hiddenSubjects.includes(materia);
-                  return (
-                    <button
-                      key={materia}
-                      type="button"
-                      onClick={() => toggleSubject(materia)}
-                      className={cn(
-                        "flex items-center gap-2 p-1.5 rounded-lg text-left hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors group",
-                        isHidden && "opacity-30",
-                      )}
-                    >
-                      <div
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ backgroundColor: getMateriaColor(materia) }}
-                      />
-                      <span className="text-[10px] portrait:text-xs font-mono truncate uppercase flex-1">
-                        {materia.toLowerCase()}
-                      </span>
-                      {isHidden ? (
-                        <EyeOff className="w-3 h-3 text-gray-400" />
-                      ) : (
-                        <Eye className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100" />
-                      )}
-                    </button>
-                  );
-                })}
-            </div>
+            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
+              Filtra Materie
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-2">
+            {Array.from(new Set(allMaterie))
+              .sort()
+              .map((materia) => {
+                const isHidden = hiddenSubjects.includes(materia);
+                return (
+                  <button
+                    key={materia}
+                    type="button"
+                    onClick={() => toggleSubject(materia)}
+                    className={cn(
+                      "flex items-center gap-3 p-3 lg:p-4 rounded-xl lg:rounded-2xl border transition-all text-left",
+                      isHidden
+                        ? "bg-zinc-50 dark:bg-zinc-900/20 border-transparent opacity-40"
+                        : "bg-white dark:bg-zinc-900/10 border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 hover:shadow-md active:scale-95",
+                    )}
+                  >
+                    <div
+                      className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
+                      style={{ backgroundColor: getMateriaColor(materia) }}
+                    />
+                    <span className="text-[10px] font-bold uppercase tracking-tight truncate flex-1 font-mono">
+                      {materia.toLowerCase()}
+                    </span>
+                  </button>
+                );
+              })}
           </div>
         </div>
       </div>
-
-      <AnimatePresence>
-        {(() => {
-          const dayToShow = selectedDayLocal || selectedDay;
-          if (!dayToShow) return null;
-          return (
-            <CalendarDayDialog
-              day={dayToShow}
-              isOpen={true}
-              onClose={() => {
-                setSelectedDayLocal(null);
-                if (onDaySelect) onDaySelect(null);
-              }}
-              materiaColorMap={materiaColorMap}
-            />
-          );
-        })()}
-      </AnimatePresence>
-    </>
+    </div>
   );
 }

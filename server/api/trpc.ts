@@ -49,7 +49,6 @@ const isAdminMiddleware = t.middleware(({ ctx, next }) => {
 
 const analyticsMiddleware = t.middleware(async ({ ctx, next, path, type }) => {
   if (ctx.userId) {
-    // Run in background to not block the request
     void (async () => {
       try {
         const userId = ctx.userId;

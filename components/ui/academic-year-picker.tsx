@@ -14,6 +14,7 @@ interface AcademicYearPickerProps {
   value?: string;
   onChange: (value: string) => void;
   className?: string;
+  id?: string;
 }
 
 function generateAcademicYears(count = 10): string[] {
@@ -31,6 +32,7 @@ export function AcademicYearPicker({
   value,
   onChange,
   className,
+  id,
 }: AcademicYearPickerProps) {
   const [open, setOpen] = useState(false);
   const academicYears = generateAcademicYears();
@@ -39,6 +41,7 @@ export function AcademicYearPicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           variant="outline"
           className={cn(
             "w-full justify-start text-left font-normal h-10 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800",
