@@ -23,7 +23,7 @@ import { ThemeToggle } from "./components/ThemeToggle";
 import { WelcomeDialog } from "./components/WelcomeDialog";
 
 export default function Home() {
-  const router = useRouter();
+  const _router = useRouter();
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDay, setSelectedDay] = useState<DaySchedule | null>(null);
   const [activeView, setActiveView] = useState<"week" | "month">("week");
@@ -36,9 +36,14 @@ export default function Home() {
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
   }, []);
 
   useEffect(() => {
@@ -215,14 +220,14 @@ export default function Home() {
         </header>
 
         {calendarId ? (
-          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex flex-col flex-1 min-h-0">
             {activeView === "week" ? (
-              <div className="flex flex-col landscape:flex-row lg:grid lg:grid-cols-12 gap-2 landscape:gap-6 portrait:gap-6 lg:gap-10 flex-1 min-h-0 overflow-hidden">
-                <section className="w-full landscape:w-[350px] lg:w-full lg:col-span-3 flex-shrink-0 min-w-0">
+              <div className="flex flex-col landscape:flex-row lg:grid lg:grid-cols-12 gap-2 landscape:gap-6 portrait:gap-6 lg:gap-10 flex-1 min-h-0">
+                <section className="w-full landscape:w-[350px] lg:w-full lg:col-span-3 flex-shrink-0 min-w-0 flex flex-col">
                   <NextLessonCard schedule={schedule} />
                 </section>
 
-                <section className="w-full flex-1 min-h-0 flex flex-col landscape:flex-1 lg:w-full lg:col-span-5 min-w-0">
+                <section className="w-full flex-1 min-h-0 flex flex-col landscape:flex-1 lg:w-full lg:col-span-5">
                   <CalendarView
                     schedule={schedule}
                     weekOffset={weekOffset}
@@ -236,7 +241,7 @@ export default function Home() {
                   />
                 </section>
 
-                <section className="hidden lg:block lg:col-span-4 min-w-0 h-full">
+                <section className="hidden lg:flex flex-col lg:col-span-4 min-w-0 min-h-0">
                   <DayView
                     day={selectedDay}
                     materiaColorMap={materiaColorMap}
@@ -244,7 +249,7 @@ export default function Home() {
                 </section>
               </div>
             ) : (
-              <div className="flex flex-col landscape:flex-row lg:grid lg:grid-cols-12 gap-2 landscape:gap-6 portrait:gap-6 lg:gap-10 flex-1 min-h-0 overflow-hidden h-full">
+              <div className="flex flex-col landscape:flex-row lg:grid lg:grid-cols-12 gap-2 landscape:gap-6 portrait:gap-6 lg:gap-10 flex-1 min-h-0 h-full">
                 <section className="flex-1 min-h-0 flex flex-col lg:col-span-8 h-full">
                   <MonthlyView
                     onDaySelect={setSelectedDay}
@@ -297,14 +302,12 @@ export default function Home() {
       />
 
       <AnimatePresence>
-        {selectedDay && (
-          <div className="lg:hidden">
-            <CalendarDayDialog
-              day={selectedDay}
-              isOpen={true}
-              onClose={() => setSelectedDay(null)}
-            />
-          </div>
+        {selectedDay && !isDesktop && (
+          <CalendarDayDialog
+            day={selectedDay}
+            isOpen={true}
+            onClose={() => setSelectedDay(null)}
+          />
         )}
       </AnimatePresence>
     </div>

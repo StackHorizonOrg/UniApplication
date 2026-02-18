@@ -11,6 +11,7 @@ import {
   Clock,
   Copy,
   Globe,
+  Home,
   LayoutGrid,
   LogOut,
   Plus,
@@ -409,6 +410,13 @@ export default function AdminPage() {
 
           <div className="flex-shrink-0 flex items-center gap-2">
             <ThemeToggle />
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl text-zinc-500 hover:text-blue-500 transition-all active:scale-90 flex-shrink-0"
+            >
+              <Home className="w-5 h-5" />
+            </button>
             <button
               type="button"
               onClick={() => setAddCourseDialog(true)}

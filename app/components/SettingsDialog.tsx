@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
   ArrowLeft,
@@ -32,7 +33,6 @@ import type { Course } from "@/lib/courses";
 import { useLocalStorage, useUserId } from "@/lib/hooks";
 import { extractCalendarId } from "@/lib/orario-utils";
 import { cn } from "@/lib/utils";
-import { AnimatePresence, motion } from "framer-motion";
 
 const INITIAL_HIDDEN_SUBJECTS: string[] = [];
 
@@ -534,9 +534,7 @@ export function SettingsDialog({
   const [copiedCourseId, setCopiedCourseId] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const [dialogStep, setDialogStep] = useState<"course" | "subjects">(
-    "course",
-  );
+  const [dialogStep, setDialogStep] = useState<"course" | "subjects">("course");
 
   const userId = useUserId();
 
@@ -768,7 +766,10 @@ export function SettingsDialog({
         </div>
 
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <AnimatePresence mode="wait" custom={dialogStep === "course" ? 1 : -1}>
+          <AnimatePresence
+            mode="wait"
+            custom={dialogStep === "course" ? 1 : -1}
+          >
             {dialogStep === "course" ? (
               <CoursePanel
                 activeTab={activeTab}

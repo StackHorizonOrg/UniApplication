@@ -44,8 +44,8 @@ export function AcademicYearPicker({
           id={id}
           variant="outline"
           className={cn(
-            "w-full justify-start text-left font-normal h-10 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800",
-            !value && "text-gray-500",
+            "w-full justify-start text-left font-normal h-10 bg-background border-border",
+            !value && "text-muted-foreground",
             className,
           )}
         >
@@ -54,12 +54,12 @@ export function AcademicYearPicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <div className="p-3 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg">
+        <div className="p-3 bg-card border-border rounded-lg shadow-lg">
           <div className="mb-2 px-2">
-            <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+            <h4 className="text-sm font-medium text-card-foreground">
               Anno Accademico
             </h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Seleziona l'anno di riferimento
             </p>
           </div>
@@ -75,8 +75,8 @@ export function AcademicYearPicker({
                 className={cn(
                   "px-3 py-2 text-sm rounded-md transition-all font-medium",
                   value === year
-                    ? "bg-black dark:bg-white text-white dark:text-black"
-                    : "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800",
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background text-card-foreground hover:bg-accent border border-border",
                 )}
               >
                 {year}

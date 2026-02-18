@@ -65,13 +65,13 @@ function Calendar({
   }, []);
 
   return (
-    <div className={cn("p-3", className)}>
+    <div className={cn("p-3 bg-card", className)}>
       <div className="flex justify-center items-center relative mb-4">
         {view === "days" && (
           <>
             <Button
               variant="outline"
-              className="absolute left-0 top-0 h-7 w-7 p-0 bg-transparent opacity-50 hover:opacity-100 z-10"
+              className="absolute left-0 top-0 h-8 w-8 p-0 bg-transparent z-10 rounded-full"
               onClick={() => {
                 const newDate = new Date(internalDate);
                 newDate.setMonth(newDate.getMonth() - 1);
@@ -82,7 +82,7 @@ function Calendar({
             </Button>
             <Button
               variant="outline"
-              className="absolute right-0 top-0 h-7 w-7 p-0 bg-transparent opacity-50 hover:opacity-100 z-10"
+              className="absolute right-0 top-0 h-8 w-8 p-0 bg-transparent z-10 rounded-full"
               onClick={() => {
                 const newDate = new Date(internalDate);
                 newDate.setMonth(newDate.getMonth() + 1);
@@ -97,7 +97,7 @@ function Calendar({
         {view === "years" && (
           <Button
             variant="outline"
-            className="absolute left-0 top-0 h-7 w-7 p-0 bg-transparent opacity-50 hover:opacity-100 z-10"
+            className="absolute left-0 top-0 h-8 w-8 p-0 bg-transparent z-10 rounded-full"
             onClick={() => setView("days")}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -107,7 +107,7 @@ function Calendar({
         {view === "months" && (
           <Button
             variant="ghost"
-            className="absolute left-0 top-0 h-7 w-auto p-2 text-sm font-normal z-10"
+            className="absolute left-0 top-0 h-8 w-auto p-2 text-sm font-normal z-10"
             onClick={() => setView("years")}
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
@@ -153,17 +153,17 @@ function Calendar({
 
             day: cn(
               "h-9 w-9 text-center text-sm p-0 relative",
-              "[&:has([aria-selected].day-range-end)]:rounded-r-md",
+              "[&:has([aria-selected].day-range-end)]:rounded-r-full",
               "[&:has([aria-selected].day-outside)]:bg-accent/50",
               "[&:has([aria-selected])]:bg-accent",
-              "first:[&:has([aria-selected])]:rounded-l-md",
-              "last:[&:has([aria-selected])]:rounded-r-md",
+              "first:[&:has([aria-selected])]:rounded-l-full",
+              "last:[&:has([aria-selected])]:rounded-r-full",
               "focus-within:relative focus-within:z-20",
             ),
 
             day_button: cn(
               buttonVariants({ variant: "ghost" }),
-              "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-md",
+              "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-full",
               "focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none",
             ),
 
@@ -171,12 +171,12 @@ function Calendar({
             range_start: "day-range-start",
 
             selected: cn(
-              "bg-primary text-primary-foreground rounded-md",
+              "bg-primary text-primary-foreground rounded-full",
               "hover:bg-primary hover:text-primary-foreground",
               "focus:bg-primary focus:text-primary-foreground",
             ),
 
-            today: "bg-accent text-accent-foreground rounded-md",
+            today: "bg-accent text-accent-foreground rounded-full",
             outside:
               "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
             disabled: "text-muted-foreground opacity-50",
@@ -198,7 +198,7 @@ function Calendar({
               variant={
                 year === internalDate.getFullYear() ? "default" : "ghost"
               }
-              className="h-9 w-full"
+              className="h-9 w-full rounded-full"
               onClick={() => {
                 const newDate = new Date(internalDate);
                 newDate.setFullYear(year);
@@ -218,7 +218,7 @@ function Calendar({
             <Button
               key={month}
               variant={index === internalDate.getMonth() ? "default" : "ghost"}
-              className="h-9 w-full capitalize"
+              className="h-9 w-full capitalize rounded-full"
               onClick={() => {
                 const newDate = new Date(internalDate);
                 newDate.setMonth(index);
