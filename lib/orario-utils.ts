@@ -14,6 +14,7 @@ export interface DaySchedule {
   dayOfMonth?: number;
   events: ParsedEvent[];
   date?: DateTime;
+  materiaColorMap?: Record<string, string>;
 }
 
 const giorni = [

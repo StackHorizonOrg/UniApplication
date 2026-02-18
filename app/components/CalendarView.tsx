@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Filter,
   LayoutGrid,
+  MoreHorizontal,
   RotateCcw,
 } from "lucide-react";
 import { DateTime } from "luxon";
@@ -26,7 +27,6 @@ import {
 } from "@/lib/date-utils";
 import { useLocalStorage } from "@/lib/hooks";
 import type { DaySchedule } from "@/lib/orario-utils";
-import { getMateriaColorMap } from "@/lib/orario-utils";
 import { cn } from "@/lib/utils";
 
 dayjs.extend(utc);
@@ -41,6 +41,7 @@ interface CalendarViewProps {
   onSetOffset: (offset: number) => void;
   onDaySelect?: (day: DaySchedule | null) => void;
   selectedDay?: DaySchedule | null;
+  materiaColorMap: Record<string, string>;
 }
 
 const INITIAL_HIDDEN_SUBJECTS: string[] = [];
@@ -54,6 +55,7 @@ export function CalendarView({
   onSetOffset,
   onDaySelect,
   selectedDay,
+  materiaColorMap,
 }: CalendarViewProps) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [hiddenSubjects, setHiddenSubjects] = useLocalStorage<string[]>(
@@ -63,17 +65,19 @@ export function CalendarView({
   const [direction, setDirection] = useState(0);
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
   const [_isMobile, setIsMobile] = useState(false);
-  const [isSmallLandscape, setIsSmallLandscape] = useState(false);
+  const [showTabs, setShowTabs] = useState(false);
   const [activeTab, setActiveTab] = useState<"calendar" | "filters">(
     "calendar",
   );
+  const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
+  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
 
   useEffect(() => {
     const checkSize = () => {
-      setIsMobile(window.innerWidth < 1024);
-      setIsSmallLandscape(
-        window.innerWidth > window.innerHeight && window.innerHeight < 600,
-      );
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      setIsMobile(width < 1024);
+      setShowTabs(height < 750);
     };
     checkSize();
     window.addEventListener("resize", checkSize);
@@ -98,10 +102,6 @@ export function CalendarView({
   const allMaterie = useMemo(
     () => schedule.flatMap((day) => day.events.map((ev) => ev.materia)),
     [schedule],
-  );
-  const materiaColorMap = useMemo(
-    () => getMateriaColorMap(allMaterie),
-    [allMaterie],
   );
 
   const toggleSubject = (materia: string) => {
@@ -157,43 +157,10 @@ export function CalendarView({
 
   return (
     <div className="w-full flex-1 min-h-0 bg-white dark:bg-black border border-zinc-200 dark:border-zinc-900 rounded-3xl overflow-hidden flex flex-col shadow-sm">
-      {isSmallLandscape && (
-        <div className="px-4 py-2 border-b border-zinc-100 dark:border-zinc-900 bg-zinc-50/20 dark:bg-zinc-900/10 flex justify-center">
-          <div className="flex bg-zinc-100/80 dark:bg-zinc-900/80 p-1 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 backdrop-blur-sm w-full max-w-[300px]">
-            <button
-              type="button"
-              onClick={() => setActiveTab("calendar")}
-              className={cn(
-                "flex-1 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all",
-                activeTab === "calendar"
-                  ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm"
-                  : "text-zinc-400 hover:text-zinc-500",
-              )}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Calendario</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("filters")}
-              className={cn(
-                "flex-1 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all",
-                activeTab === "filters"
-                  ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm"
-                  : "text-zinc-400 hover:text-zinc-500",
-              )}
-            >
-              <Filter className="w-3.5 h-3.5" />
-              <span>Materie</span>
-            </button>
-          </div>
-        </div>
-      )}
-
       <div
         className={cn(
           "flex-shrink-0 flex flex-col",
-          isSmallLandscape && activeTab !== "calendar" && "hidden",
+          showTabs && activeTab !== "calendar" && "hidden",
         )}
       >
         <div className="relative z-20 border-b border-zinc-100 dark:border-zinc-900 bg-white dark:bg-black">
@@ -291,13 +258,70 @@ export function CalendarView({
                 </AnimatePresence>
               </div>
 
-              <button
-                type="button"
-                onClick={handleNextWeek}
-                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition-all active:scale-90"
-              >
-                <ChevronRight className="w-5 h-5 text-zinc-400" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleNextWeek}
+                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition-all active:scale-90"
+                >
+                  <ChevronRight className="w-5 h-5 text-zinc-400" />
+                </button>
+
+                {showTabs && (
+                  <Popover
+                    open={isViewMenuOpen}
+                    onOpenChange={setIsViewMenuOpen}
+                  >
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition-all active:scale-90"
+                      >
+                        <MoreHorizontal className="w-5 h-5 text-zinc-400" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="end"
+                      className="w-40 p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab("calendar");
+                            setIsViewMenuOpen(false);
+                          }}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
+                            activeTab === "calendar"
+                              ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white"
+                              : "text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                          )}
+                        >
+                          <LayoutGrid className="w-4 h-4" />
+                          <span>Calendario</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab("filters");
+                            setIsViewMenuOpen(false);
+                          }}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
+                            activeTab === "filters"
+                              ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white"
+                              : "text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                          )}
+                        >
+                          <Filter className="w-4 h-4" />
+                          <span>Materie</span>
+                        </button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
             </div>
 
             <div className="px-4 portrait:px-6 pb-3">
@@ -313,7 +337,7 @@ export function CalendarView({
                 )}
               </div>
 
-              <div className="relative h-[50px] portrait:h-[70px]">
+              <div className="relative w-full aspect-[7.5/1] min-h-[60px]">
                 <AnimatePresence
                   initial={false}
                   custom={direction}
@@ -338,7 +362,8 @@ export function CalendarView({
                           type="button"
                           onClick={() => {
                             if (dayData.hasEvents) {
-                              if (onDaySelect) onDaySelect(dayData);
+                              if (onDaySelect)
+                                onDaySelect({ ...dayData, materiaColorMap });
                             }
                           }}
                           className={cn(
@@ -406,17 +431,71 @@ export function CalendarView({
       <div
         className={cn(
           "flex-1 min-h-0 overflow-y-auto custom-scrollbar",
-          isSmallLandscape && activeTab !== "filters" && "hidden",
+          showTabs && activeTab !== "filters" && "hidden",
         )}
       >
-        <div className="px-5 pb-20">
-          <div className="sticky top-0 bg-white dark:bg-black z-10 pt-4 pb-2 mb-4">
+        <div className="px-5 pb-6">
+          <div className="sticky top-0 bg-white dark:bg-black z-10 pt-4 pb-2 mb-2 flex justify-between items-center">
             <div className="flex items-center gap-2 opacity-40">
               <Filter className="w-3.5 h-3.5 text-zinc-400" />
               <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
                 Filtra Materie
               </span>
             </div>
+            {showTabs && (
+              <Popover
+                open={isFilterMenuOpen}
+                onOpenChange={setIsFilterMenuOpen}
+              >
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition-all active:scale-90"
+                  >
+                    <MoreHorizontal className="w-5 h-5 text-zinc-400" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="end"
+                  className="w-40 p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl"
+                >
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("calendar");
+                        setIsFilterMenuOpen(false);
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
+                        activeTab === "calendar"
+                          ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white"
+                          : "text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                      )}
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                      <span>Calendario</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab("filters");
+                        setIsFilterMenuOpen(false);
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
+                        activeTab === "filters"
+                          ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white"
+                          : "text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                      )}
+                    >
+                      <Filter className="w-4 h-4" />
+                      <span>Materie</span>
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-2">
             {Array.from(new Set(allMaterie))

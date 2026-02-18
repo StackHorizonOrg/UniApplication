@@ -242,6 +242,7 @@ export default function Home() {
                     onSetOffset={setWeekOffset}
                     onDaySelect={setSelectedDay}
                     selectedDay={selectedDay}
+                    materiaColorMap={materiaColorMap}
                   />
                 </section>
 
@@ -313,7 +314,6 @@ export default function Home() {
               day={selectedDay}
               isOpen={true}
               onClose={() => setSelectedDay(null)}
-              materiaColorMap={materiaColorMap}
             />
           </div>
         )}

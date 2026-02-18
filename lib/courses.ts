@@ -54,7 +54,7 @@ export async function addCourse(
     );
   }
 
-  const id = `course-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const id = `course-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 
   await db.insert(courses).values({
     id,

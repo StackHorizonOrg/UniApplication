@@ -9,7 +9,6 @@ interface CalendarDayDialogProps {
   day: DaySchedule;
   isOpen: boolean;
   onClose: () => void;
-  materiaColorMap: Record<string, string>;
 }
 
 const START_HOUR = 8;
@@ -35,7 +34,6 @@ export function CalendarDayDialog({
   day,
   isOpen,
   onClose,
-  materiaColorMap,
 }: CalendarDayDialogProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -44,7 +42,7 @@ export function CalendarDayDialog({
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toUpperCase();
-    return materiaColorMap[normalizedMateria] || "#666666";
+    return day.materiaColorMap?.[normalizedMateria] || "#666666";
   };
 
   const timeSlots = useMemo(() => {
@@ -122,7 +120,7 @@ export function CalendarDayDialog({
   }, [day.events]);
 
   const monthName = useMemo(() => {
-    if (day.date && day.date instanceof DateTime) {
+    if (day.date) {
       return day.date.setLocale("it").toFormat("MMMM");
     }
     return "";
@@ -143,7 +141,7 @@ export function CalendarDayDialog({
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 lg:bg-black/60 backdrop-blur-md p-0 lg:p-10 animate-in fade-in duration-300"
     >
-      <div className="w-full h-full lg:w-full lg:max-w-4xl lg:h-auto lg:max-h-[85vh] bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-none lg:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 slide-in-from-bottom-10 lg:slide-in-from-bottom-0 duration-300">
+      <div className="relative w-full h-full lg:w-full lg:max-w-4xl lg:h-auto lg:max-h-[85vh] bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-none lg:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 slide-in-from-bottom-10 lg:slide-in-from-bottom-0 duration-300">
         <div className="p-6 lg:p-10 border-b border-zinc-100 dark:border-zinc-900 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-4">
@@ -205,12 +203,12 @@ export function CalendarDayDialog({
           )}
 
           <div className="p-6 lg:p-10">
-            <div className="flex gap-8">
-              <div className="w-12 lg:w-16 shrink-0">
+            <div className="flex gap-2">
+              <div className="w-10 shrink-0">
                 {timeSlots.map((slot) => (
                   <div
                     key={slot}
-                    className="text-right pr-2 text-[10px] lg:text-xs font-mono font-bold text-zinc-400 dark:text-zinc-600 flex items-center justify-end"
+                    className="text-right pr-1 text-sm lg:text-base font-mono font-bold text-zinc-400 dark:text-zinc-600 flex items-center justify-end"
                     style={{ height: `${HALF_HOUR_HEIGHT}px` }}
                   >
                     {slot.endsWith(":00") ? slot : ""}
@@ -257,56 +255,32 @@ export function CalendarDayDialog({
                         width: `${width}%`,
                       }}
                     >
-                      <div
-                        className="h-full w-full rounded-2xl p-4 lg:p-5 text-xs overflow-hidden flex flex-col border shadow-sm transition-transform active:scale-[0.99]"
-                        style={{
-                          backgroundColor: `${color}15`,
-                          borderColor: `${color}40`,
-                          borderLeft: `5px solid ${color}`,
-                        }}
-                      >
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                          <span className="font-bold text-zinc-900 dark:text-white text-sm lg:text-base leading-tight line-clamp-2">
-                            {event.materia}
-                          </span>
-                          <span
-                            className={cn(
-                              "text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-tighter shrink-0",
-                              event.tipo === "Laboratorio"
-                                ? "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
-                                : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-                            )}
-                          >
-                            {event.tipo === "Laboratorio" ? "LAB" : "LEZ"}
-                          </span>
-                        </div>
-
-                        <div className="mt-auto space-y-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                          <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400 font-mono">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span className="text-[11px] font-bold">
+                      <div className="h-full w-full rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 flex items-start gap-3 p-3 overflow-hidden shadow-sm transition-transform active:scale-[0.99]">
+                        <div
+                          className="w-1.5 h-full rounded-full shrink-0 group-hover:scale-y-110 transition-transform"
+                          style={{ backgroundColor: color }}
+                        />
+                        <div className="min-w-0 flex-1 flex flex-col h-full">
+                          <div className="flex items-center gap-2 mb-1 shrink-0">
+                            <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                            <span className="text-sm lg:text-base font-mono font-bold text-zinc-500 uppercase">
                               {event.time
                                 .split(" - ")
                                 .map(formatTime)
-                                .join(" – ")}
+                                .join("-")}
                             </span>
                           </div>
-
-                          {event.aula && (
-                            <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
-                              <MapPin className="w-3.5 h-3.5" />
-                              <span className="truncate text-[11px] font-medium font-mono">
-                                {event.aula}
-                              </span>
-                            </div>
-                          )}
-
-                          {event.docente && height > 100 && (
-                            <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400 pt-2 border-t border-zinc-500/10">
-                              <User className="w-3.5 h-3.5" />
-                              <span className="truncate text-[11px] italic font-serif">
-                                {event.docente}
-                              </span>
+                          <h4 className="font-serif font-bold text-xs lg:text-sm text-zinc-900 dark:text-white leading-tight mb-1 whitespace-normal">
+                            {event.materia}
+                          </h4>
+                          <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 shrink-0 mt-auto">
+                            <MapPin className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{event.aula}</span>
+                          </div>
+                          {event.docente && height > 80 && (
+                            <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 shrink-0 mt-1">
+                              <User className="w-3 h-3 shrink-0" />
+                              <span className="truncate">{event.docente}</span>
                             </div>
                           )}
                         </div>
@@ -319,16 +293,18 @@ export function CalendarDayDialog({
             <div style={{ height: "60px" }} />
           </div>
         </div>
-
-        <div className="p-8 bg-zinc-50/50 dark:bg-zinc-900/20 border-t border-zinc-100 dark:border-zinc-900 text-center">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-12 py-3 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-black text-[10px] font-bold uppercase tracking-[0.2em] hover:opacity-90 transition-all shadow-lg active:scale-95"
-          >
-            Chiudi Dettagli
-          </button>
-        </div>
+      </div>
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex items-center justify-center gap-2 px-5 py-3 rounded-full bg-white/80 dark:bg-black/80 backdrop-blur-lg border border-white/20 dark:border-black/20 shadow-xl text-zinc-900 dark:text-white hover:bg-white/90 dark:hover:bg-black/90 transition-all active:scale-95"
+        >
+          <X className="w-5 h-5" />
+          <span className="text-sm font-bold font-mono uppercase tracking-wider">
+            Chiudi
+          </span>
+        </button>
       </div>
     </div>
   );

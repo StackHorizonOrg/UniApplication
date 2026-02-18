@@ -1,13 +1,7 @@
-import { DateTime } from "luxon";
-import { z } from "zod";
-import {
-  addDays,
-  formatDate,
-  getCurrentItalianDateTime,
-  getDayOfWeek,
-  timeToMinutes,
-} from "@/lib/date-utils";
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import {DateTime} from "luxon";
+import {z} from "zod";
+import {addDays, formatDate, getCurrentItalianDateTime, getDayOfWeek, timeToMinutes,} from "@/lib/date-utils";
+import {createTRPCRouter, publicProcedure} from "../trpc";
 
 type OrarioData = Array<{
   day: number;
@@ -290,50 +284,48 @@ export const orarioRouter = createTRPCRouter({
           ? rawData
           : rawData.impegni || [];
 
-        const processed = events
-          .map((e) => {
-            const date = DateTime.fromISO(e.dataInizio).setZone("Europe/Rome");
-            let eventCity = "Unknown";
-            let aulaName = "N/A";
+        return events
+            .map((e) => {
+              const date = DateTime.fromISO(e.dataInizio).setZone("Europe/Rome");
+              let eventCity = "Unknown";
+              let aulaName = "N/A";
 
-            if (e.aule && e.aule.length > 0) {
-              aulaName = e.aule[0].descrizione;
-              if (e.aule[0].edificio) {
-                eventCity = e.aule[0].edificio.comune;
+              if (e.aule && e.aule.length > 0) {
+                aulaName = e.aule[0].descrizione;
+                if (e.aule[0].edificio) {
+                  eventCity = e.aule[0].edificio.comune;
+                }
               }
-            }
 
-            if (input.location !== "Tutte") {
-              const isVarese =
-                eventCity.toUpperCase().includes("VARESE") ||
-                aulaName.toUpperCase().includes("VARESE");
-              const isComo =
-                eventCity.toUpperCase().includes("COMO") ||
-                aulaName.toUpperCase().includes("COMO");
-              if (input.location === "Varese" && !isVarese) return null;
-              if (input.location === "Como" && !isComo) return null;
-            }
+              if (input.location !== "Tutte") {
+                const isVarese =
+                    eventCity.toUpperCase().includes("VARESE") ||
+                    aulaName.toUpperCase().includes("VARESE");
+                const isComo =
+                    eventCity.toUpperCase().includes("COMO") ||
+                    aulaName.toUpperCase().includes("COMO");
+                if (input.location === "Varese" && !isVarese) return null;
+                if (input.location === "Como" && !isComo) return null;
+              }
 
-            const start = date.toFormat("HH:mm");
-            const end = DateTime.fromISO(e.dataFine)
-              .setZone("Europe/Rome")
-              .toFormat("HH:mm");
+              const start = date.toFormat("HH:mm");
+              const end = DateTime.fromISO(e.dataFine)
+                  .setZone("Europe/Rome")
+                  .toFormat("HH:mm");
 
-            return {
-              date: date.toISODate(),
-              day: getDayOfWeek(date),
-              time: `${start} - ${end}`,
-              title: e.nome || "Lezione",
-              location: `${aulaName} (${eventCity})`,
-              professor:
-                e.docenti && e.docenti.length > 0
-                  ? `${e.docenti[0].cognome} ${e.docenti[0].nome}`
-                  : "N/A",
-            };
-          })
-          .filter((e): e is NonNullable<typeof e> => e !== null);
-
-        return processed;
+              return {
+                date: date.toISODate(),
+                day: getDayOfWeek(date),
+                time: `${start} - ${end}`,
+                title: e.nome || "Lezione",
+                location: `${aulaName} (${eventCity})`,
+                professor:
+                    e.docenti && e.docenti.length > 0
+                        ? `${e.docenti[0].cognome} ${e.docenti[0].nome}`
+                        : "N/A",
+              };
+            })
+            .filter((e): e is NonNullable<typeof e> => e !== null);
       } catch (error) {
         console.error("Failed to fetch monthly orario:", error);
         return [];
