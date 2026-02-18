@@ -1,7 +1,7 @@
-import {count, desc, gte, sql} from "drizzle-orm";
-import {db} from "@/lib/db";
-import {analyticsUsers, apiLogs} from "@/lib/db/schema";
-import {adminProcedure, createTRPCRouter} from "../trpc";
+import { count, desc, gte, sql } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { analyticsUsers, apiLogs } from "@/lib/db/schema";
+import { adminProcedure, createTRPCRouter } from "../trpc";
 
 export const analyticsRouter = createTRPCRouter({
   getStats: adminProcedure.query(async () => {
@@ -69,13 +69,13 @@ export const analyticsRouter = createTRPCRouter({
 
   getTopEndpoints: adminProcedure.query(async () => {
     return await db
-        .select({
-          endpoint: apiLogs.endpoint,
-          count: count(),
-        })
-        .from(apiLogs)
-        .groupBy(apiLogs.endpoint)
-        .orderBy(desc(count()))
-        .limit(10);
+      .select({
+        endpoint: apiLogs.endpoint,
+        count: count(),
+      })
+      .from(apiLogs)
+      .groupBy(apiLogs.endpoint)
+      .orderBy(desc(count()))
+      .limit(10);
   }),
 });

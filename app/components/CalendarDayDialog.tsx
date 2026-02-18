@@ -1,5 +1,4 @@
 import { Clock, Layers, MapPin, User, X } from "lucide-react";
-import { DateTime } from "luxon";
 import { useMemo, useRef } from "react";
 import type { DaySchedule, ParsedEvent } from "@/lib/orario-utils";
 import { getDayName } from "@/lib/orario-utils";

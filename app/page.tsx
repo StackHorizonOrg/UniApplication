@@ -60,10 +60,6 @@ export default function Home() {
     }
   };
 
-  const handleShowWelcome = () => {
-    setIsWelcomeOpen(true);
-  };
-
   const {
     data: orario,
     isLoading,
@@ -111,7 +107,6 @@ export default function Home() {
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
           forceOpen={hasSeenWelcome && !calendarId}
-          onShowWelcome={handleShowWelcome}
         />
       </div>
     );
@@ -156,7 +151,6 @@ export default function Home() {
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
           forceOpen={hasSeenWelcome && !calendarId}
-          onShowWelcome={handleShowWelcome}
         />
       </div>
     );
@@ -167,11 +161,7 @@ export default function Home() {
       <main className="w-full px-4 py-3 portrait:py-4 lg:px-8 lg:py-6 flex-1 max-w-screen-2xl mx-auto flex flex-col overflow-hidden">
         <header className="flex items-center justify-between mb-4 lg:mb-8 flex-shrink-0 gap-4">
           <div className="flex-1 min-w-0">
-            <button
-              type="button"
-              className="flex flex-col min-w-0 cursor-default select-none group focus:outline-none text-left max-w-full"
-              onDoubleClick={() => router.push("/admin")}
-            >
+            <div className="flex flex-col min-w-0 cursor-default select-none group focus:outline-none text-left max-w-full">
               <h1 className="text-base lg:text-lg font-bold text-zinc-900 dark:text-white font-serif tracking-tight truncate leading-none w-full">
                 {courseName || "Orario Insubria"}
               </h1>
@@ -180,7 +170,7 @@ export default function Home() {
                   Orario Insubria
                 </p>
               )}
-            </button>
+            </div>
           </div>
 
           <div className="flex-shrink-0 flex bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 p-1 rounded-2xl shadow-sm">
@@ -304,7 +294,6 @@ export default function Home() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         forceOpen={hasSeenWelcome && !calendarId}
-        onShowWelcome={handleShowWelcome}
       />
 
       <AnimatePresence>
