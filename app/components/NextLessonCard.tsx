@@ -3,13 +3,13 @@
 import { it } from "date-fns/locale";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import {
+  ArrowLeftToLine,
   Calendar as CalendarIcon,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
   MapPin,
-  RotateCcw,
   User,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -276,7 +276,7 @@ export default function NextLessonCard({
               dayOffset === 0 ? "opacity-0 pointer-events-none" : "opacity-100",
             )}
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <ArrowLeftToLine className="w-3.5 h-3.5" />
           </button>
 
           <div className="flex bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden shadow-sm p-0.5 gap-0.5 mr-1">

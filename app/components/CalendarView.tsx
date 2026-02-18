@@ -4,13 +4,13 @@ import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import {
+  ArrowLeftToLine,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Filter,
   LayoutGrid,
   MoreHorizontal,
-  RotateCcw,
 } from "lucide-react";
 import { DateTime } from "luxon";
 import { useEffect, useMemo, useState } from "react";
@@ -183,7 +183,7 @@ export function CalendarView({
                       : "opacity-100",
                   )}
                 >
-                  <RotateCcw className="w-4 h-4" />
+                  <ArrowLeftToLine className="w-4 h-4" />
                 </button>
 
                 <button

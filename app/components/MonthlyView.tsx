@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  CalendarCheck,
+  ArrowLeftToLine,
   CalendarDays,
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -114,6 +114,7 @@ export function MonthlyView({
 
   const monthName = currentDate.toFormat("MMMM");
   const yearName = currentDate.toFormat("yyyy");
+  const isCurrentMonth = currentDate.hasSame(DateTime.now(), "month");
 
   const daysInMonth = useMemo(() => {
     const startOfMonth = currentDate.startOf("month");
@@ -206,9 +207,12 @@ export function MonthlyView({
             <button
               type="button"
               onClick={handleToday}
-              className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all rounded-lg active:scale-90"
+              className={cn(
+                "p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all rounded-lg active:scale-90",
+                isCurrentMonth && "opacity-0 pointer-events-none",
+              )}
             >
-              <CalendarCheck className="w-4 h-4 text-zinc-400" />
+              <ArrowLeftToLine className="w-4 h-4 text-zinc-400" />
             </button>
           </TooltipTrigger>
           <TooltipContent>
@@ -303,22 +307,7 @@ export function MonthlyView({
             <span className="font-serif font-bold text-sm capitalize">
               {monthName} {yearName}
             </span>
-            <div className="flex gap-1">
-              <button
-                type="button"
-                onClick={handlePrevMonth}
-                className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4 text-zinc-500" />
-              </button>
-              <button
-                type="button"
-                onClick={handleNextMonth}
-                className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-              >
-                <ChevronRight className="w-4 h-4 text-zinc-500" />
-              </button>
-            </div>
+            <NavigationControls />
           </div>
 
           <div className="flex-1 relative overflow-hidden">
@@ -338,7 +327,16 @@ export function MonthlyView({
                   x: { type: "spring", stiffness: 300, damping: 30 },
                   opacity: { duration: 0.3 },
                 }}
-                className="absolute inset-0 p-3 overflow-y-auto custom-scrollbar touch-none"
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.4}
+                dragDirectionLock
+                onDragEnd={(_e, { offset, velocity }) => {
+                  const swipe = swipePower(offset.x, velocity.x);
+                  if (swipe < -swipeConfidenceThreshold) handleNextMonth();
+                  else if (swipe > swipeConfidenceThreshold) handlePrevMonth();
+                }}
+                className="absolute inset-0 p-3 overflow-y-auto custom-scrollbar touch-pan-y"
               >
                 <div className="grid grid-cols-7 gap-1">
                   {[
