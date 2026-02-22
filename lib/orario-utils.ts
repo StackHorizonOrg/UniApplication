@@ -7,6 +7,7 @@ export interface ParsedEvent {
   docente: string;
   tipo: string;
   fullDate?: string;
+  isVideo?: boolean;
 }
 
 export interface DaySchedule {
@@ -81,6 +82,7 @@ export function parseOrarioData(
       title: string;
       location?: string;
       professor?: string;
+      isVideo?: boolean;
     }[];
   }[],
 ): DaySchedule[] {
@@ -94,6 +96,7 @@ export function parseOrarioData(
           aula: event.location || "",
           docente: event.professor || "",
           tipo: event.title.includes("Laboratorio") ? "Laboratorio" : "Lezione",
+          isVideo: event.isVideo,
         };
       }
 
@@ -107,21 +110,39 @@ export function parseOrarioData(
 }
 
 const COLOR_PALETTE = [
-  "#00D4FF",
-  "#FF3366",
-  "#00FF88",
-  "#FFAA00",
-  "#A259FF",
-  "#FF6F00",
-  "#FFB300",
-  "#009688",
-  "#C51162",
-  "#1976D2",
-  "#43A047",
-  "#F44336",
-  "#8D6E63",
-  "#607D8B",
+  "#00D4FF", // Cyan
+  "#FF3366", // Pink
+  "#00FF88", // Green
+  "#FFAA00", // Orange
+  "#A259FF", // Purple
+  "#FF6F00", // Deep Orange
+  "#009688", // Teal
+  "#C51162", // Magenta
+  "#1976D2", // Blue
+  "#43A047", // Dark Green
+  "#F44336", // Red
+  "#8D6E63", // Brown
+  "#607D8B", // Blue Grey
+  "#E91E63", // Pink 2
+  "#9C27B0", // Purple 2
+  "#2196F3", // Blue 2
+  "#00BCD4", // Cyan 2
+  "#4CAF50", // Green 2
+  "#8BC34A", // Light Green
+  "#CDDC39", // Lime
+  "#FFEB3B", // Yellow
+  "#FFC107", // Amber
 ];
+
+// Funzione hash semplice per generare un colore se la palette finisce o per aumentare l'entropia
+function stringToColor(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash) % 360;
+  return `hsl(${h}, 70%, 50%)`;
+}
 
 export function getMateriaColorMap(materie: string[]): Record<string, string> {
   const uniqueMaterie = Array.from(
@@ -130,13 +151,19 @@ export function getMateriaColorMap(materie: string[]): Record<string, string> {
         m
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "")
-          .toUpperCase(),
+          .toUpperCase()
+          .trim(),
       ),
     ),
-  );
+  ).sort();
+
   const colorMap: Record<string, string> = {};
   uniqueMaterie.forEach((mat, idx) => {
-    colorMap[mat] = COLOR_PALETTE[idx % COLOR_PALETTE.length];
+    if (idx < COLOR_PALETTE.length) {
+      colorMap[mat] = COLOR_PALETTE[idx];
+    } else {
+      colorMap[mat] = stringToColor(mat);
+    }
   });
   return colorMap;
 }

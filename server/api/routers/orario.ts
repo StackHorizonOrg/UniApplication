@@ -16,6 +16,7 @@ type OrarioData = Array<{
     title: string;
     location: string;
     professor: string;
+    isVideo?: boolean;
   }>;
 }>;
 
@@ -91,45 +92,71 @@ const processEvents = (
   }));
 
   for (const e of events) {
-    let eventCity = "Unknown";
-    let aulaName = "N/A";
-    let padiglione = "";
+    const title = e.nome || "Lezione";
+    const hasComoRooms = (e.aule || []).some(
+      (a) =>
+        (a.edificio?.comune || "").toUpperCase().includes("COMO") ||
+        a.descrizione.toUpperCase().includes("COMO"),
+    );
 
-    if (e.aule && e.aule.length > 0) {
-      aulaName = e.aule[0].descrizione;
-      if (e.aule[0].edificio) {
-        eventCity = e.aule[0].edificio.comune;
-      }
+    const isVideoConference =
+      title.toUpperCase().includes("VIDEOCONFERENZA") ||
+      title.toUpperCase().includes("TEAMS") ||
+      title.toUpperCase().includes("VIDEOCHIAMATA") ||
+      hasComoRooms ||
+      (e.aule || []).some(
+        (a) =>
+          a.descrizione.toUpperCase().includes("VIDEOCONFERENZA") ||
+          a.descrizione.toUpperCase().includes("TEAMS"),
+      );
 
-      const padiglioneMatch = aulaName.match(/Padiglione\s+([^-]+)/i);
-      if (padiglioneMatch) {
-        padiglione = `Pad. ${padiglioneMatch[1].trim()}`;
-      } else {
-        if (aulaName.includes("Morselli")) padiglione = "Pad. Morselli";
-        else if (aulaName.includes("Seppilli")) padiglione = "Pad. Seppilli";
-        else if (aulaName.includes("Antonini")) padiglione = "Pad. Antonini";
-        else if (aulaName.includes("Monte Generoso"))
-          padiglione = "Pad. Monte Generoso";
-        else if (/\bPM\b/i.test(aulaName) || /\bTM\b/i.test(aulaName))
-          padiglione = "Pad. Morselli";
-        else if (/\bMTG\b/i.test(aulaName) || /\bMG\b/i.test(aulaName))
-          padiglione = "Pad. Monte Generoso";
-        else if (/\bSEP\b/i.test(aulaName)) padiglione = "Pad. Seppilli";
-        else if (/\bANT\b/i.test(aulaName)) padiglione = "Pad. Antonini";
-      }
-    }
+    let matchesLocation = locationFilter === "Tutte" || isVideoConference;
 
-    if (locationFilter !== "Tutte") {
+    // Filtriamo le aule in base alla sede scelta dall'utente (es: solo Varese)
+    const filteredAule = (e.aule || []).filter((aula) => {
+      if (locationFilter === "Tutte") return true;
+      const name = aula.descrizione;
+      const city = aula.edificio?.comune || "Unknown";
       const isVarese =
-        eventCity.toUpperCase().includes("VARESE") ||
-        aulaName.toUpperCase().includes("VARESE");
+        city.toUpperCase().includes("VARESE") ||
+        name.toUpperCase().includes("VARESE");
       const isComo =
-        eventCity.toUpperCase().includes("COMO") ||
-        aulaName.toUpperCase().includes("COMO");
+        city.toUpperCase().includes("COMO") ||
+        name.toUpperCase().includes("COMO");
 
-      if (locationFilter === "Varese" && !isVarese) continue;
-      if (locationFilter === "Como" && !isComo) continue;
+      if (locationFilter === "Varese") return isVarese;
+      if (locationFilter === "Como") return isComo;
+      return true;
+    });
+
+    if (locationFilter !== "Tutte" && !matchesLocation) {
+      // Se non è videoconferenza e non ha aule nella sede scelta, scarta
+      matchesLocation = filteredAule.length > 0;
     }
+
+    if (!matchesLocation) continue;
+
+    // Costruiamo la stringa delle posizioni mostrando SOLO le aule della sede scelta (Varese)
+    const location =
+      filteredAule
+        .map((aula) => {
+          const name = aula.descrizione;
+          const city = aula.edificio?.comune || "Unknown";
+
+          let pad = "";
+          const padMatch = name.match(/Padiglione\s+([^-]+)/i);
+          if (padMatch) pad = `Pad. ${padMatch[1].trim()}`;
+          else if (name.includes("Morselli") || /\bPM\b/i.test(name))
+            pad = "Pad. Morselli";
+          else if (name.includes("Monte Generoso") || /\bMTG\b/i.test(name))
+            pad = "Pad. Monte Generoso";
+
+          const _normalizedName = name.toLowerCase();
+          const _normalizedPad = pad.toLowerCase().replace("pad.", "").trim();
+
+          return `${name} (${city})`;
+        })
+        .join(" | ") || (isVideoConference ? "Videoconferenza Online" : "N/A");
 
     const date = DateTime.fromISO(e.dataInizio).setZone("Europe/Rome");
     const dayIdx = getDayOfWeek(date);
@@ -145,17 +172,6 @@ const processEvents = (
         ? `${e.docenti[0].cognome} ${e.docenti[0].nome}`
         : "N/A";
     const time = `${start} - ${end}`;
-    const title = e.nome || "Lezione";
-
-    let location = `${aulaName} (${eventCity})`;
-    if (padiglione) {
-      const normalizedAula = aulaName.toLowerCase();
-      const normalizedPad = padiglione.toLowerCase().replace("pad.", "").trim();
-
-      if (!normalizedAula.includes(normalizedPad)) {
-        location = `${aulaName} - ${padiglione} (${eventCity})`;
-      }
-    }
 
     if (dayIdx >= 0 && dayIdx <= 6) {
       const isDuplicate = result[dayIdx].events.some(
@@ -171,6 +187,7 @@ const processEvents = (
           title,
           location,
           professor,
+          isVideo: isVideoConference,
         });
       }
     }
@@ -293,42 +310,75 @@ export const orarioRouter = createTRPCRouter({
         return events
           .map((e) => {
             const date = DateTime.fromISO(e.dataInizio).setZone("Europe/Rome");
-            let eventCity = "Unknown";
-            let aulaName = "N/A";
+            const title = e.nome || "Lezione";
+            const hasComoRooms = (e.aule || []).some(
+              (a) =>
+                (a.edificio?.comune || "").toUpperCase().includes("COMO") ||
+                a.descrizione.toUpperCase().includes("COMO"),
+            );
 
-            if (e.aule && e.aule.length > 0) {
-              aulaName = e.aule[0].descrizione;
-              if (e.aule[0].edificio) {
-                eventCity = e.aule[0].edificio.comune;
-              }
-            }
+            const isVideoConference =
+              title.toUpperCase().includes("VIDEOCONFERENZA") ||
+              title.toUpperCase().includes("TEAMS") ||
+              title.toUpperCase().includes("VIDEOCHIAMATA") ||
+              hasComoRooms ||
+              (e.aule || []).some(
+                (a) =>
+                  a.descrizione.toUpperCase().includes("VIDEOCONFERENZA") ||
+                  a.descrizione.toUpperCase().includes("TEAMS"),
+              );
 
-            if (input.location !== "Tutte") {
+            let matchesLocation =
+              input.location === "Tutte" || isVideoConference;
+
+            const filteredAule = (e.aule || []).filter((aula) => {
+              if (input.location === "Tutte") return true;
+              const name = aula.descrizione;
+              const city = aula.edificio?.comune || "Unknown";
               const isVarese =
-                eventCity.toUpperCase().includes("VARESE") ||
-                aulaName.toUpperCase().includes("VARESE");
+                city.toUpperCase().includes("VARESE") ||
+                name.toUpperCase().includes("VARESE");
               const isComo =
-                eventCity.toUpperCase().includes("COMO") ||
-                aulaName.toUpperCase().includes("COMO");
-              if (input.location === "Varese" && !isVarese) return null;
-              if (input.location === "Como" && !isComo) return null;
+                city.toUpperCase().includes("COMO") ||
+                name.toUpperCase().includes("COMO");
+
+              if (input.location === "Varese") return isVarese;
+              if (input.location === "Como") return isComo;
+              return true;
+            });
+
+            if (input.location !== "Tutte" && !matchesLocation) {
+              matchesLocation = filteredAule.length > 0;
             }
+
+            if (!matchesLocation) return null;
 
             const start = date.toFormat("HH:mm");
             const end = DateTime.fromISO(e.dataFine)
               .setZone("Europe/Rome")
               .toFormat("HH:mm");
 
+            const location =
+              filteredAule
+                .map((aula) => {
+                  const name = aula.descrizione;
+                  const city = aula.edificio?.comune || "Unknown";
+                  return `${name} (${city})`;
+                })
+                .join(" | ") ||
+              (isVideoConference ? "Videoconferenza Online" : "N/A");
+
             return {
               date: date.toISODate(),
               day: getDayOfWeek(date),
               time: `${start} - ${end}`,
-              title: e.nome || "Lezione",
-              location: `${aulaName} (${eventCity})`,
+              title,
+              location,
               professor:
                 e.docenti && e.docenti.length > 0
                   ? `${e.docenti[0].cognome} ${e.docenti[0].nome}`
                   : "N/A",
+              isVideo: isVideoConference,
             };
           })
           .filter((e): e is NonNullable<typeof e> => e !== null);

@@ -11,6 +11,7 @@ import {
   Clock,
   MapPin,
   User,
+  Video,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
@@ -121,7 +122,7 @@ export default function NextLessonCard({
     () =>
       (data?.lessons || []).filter(
         (l) =>
-          !l.time?.toUpperCase().includes("ANNULLATO") &&
+          (l.isVideo || !l.time?.toUpperCase().includes("ANNULLATO")) &&
           !hiddenSubjects.includes(l.title),
       ),
     [data, hiddenSubjects],
@@ -381,12 +382,23 @@ export default function NextLessonCard({
                         {currentLesson.time}
                       </span>
                     </div>
-                    {dayOffset === 0 &&
-                      data?.nextLesson?.lesson.time === currentLesson.time && (
-                        <span className="flex items-center gap-1 text-[9px] font-bold font-mono px-2 py-0.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-black uppercase tracking-tighter">
-                          Ora
-                        </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {currentLesson.isVideo && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500 shadow-[0_0_12px_-2px_rgba(59,130,246,0.5)] border border-blue-400/20">
+                          <Video className="w-3 h-3 text-white" />
+                          <span className="text-[10px] font-black font-mono text-white uppercase tracking-wider">
+                            Videoconferenza
+                          </span>
+                        </div>
                       )}
+                      {dayOffset === 0 &&
+                        data?.nextLesson?.lesson.time ===
+                          currentLesson.time && (
+                          <span className="flex items-center gap-1 text-[10px] font-black font-mono px-2.5 py-1 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-black uppercase tracking-wider">
+                            Ora
+                          </span>
+                        )}
+                    </div>
                   </div>
 
                   <h3
@@ -406,7 +418,11 @@ export default function NextLessonCard({
                   >
                     {currentLesson.location && (
                       <div className="flex items-center gap-2 text-xs text-zinc-500 font-medium font-mono min-w-0">
-                        <MapPin className="w-3 h-3 shrink-0 opacity-50 text-zinc-400" />
+                        {currentLesson.isVideo ? (
+                          <Video className="w-3 h-3 shrink-0 opacity-50 text-blue-500" />
+                        ) : (
+                          <MapPin className="w-3 h-3 shrink-0 opacity-50 text-zinc-400" />
+                        )}
                         <span className="truncate">
                           {currentLesson.location}
                         </span>

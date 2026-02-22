@@ -1,4 +1,4 @@
-import { Clock, Layers, MapPin, User, X } from "lucide-react";
+import { Clock, Layers, MapPin, User, Video, X } from "lucide-react";
 import { useMemo } from "react";
 import type { DaySchedule, ParsedEvent } from "@/lib/orario-utils";
 import { getDayName } from "@/lib/orario-utils";
@@ -240,18 +240,38 @@ export function CalendarDayView({ day, onClose }: CalendarDayViewProps) {
                         style={{ backgroundColor: color }}
                       />
                       <div className="min-w-0 flex-1 flex flex-col h-full">
-                        <div className="flex items-center gap-2 mb-1 shrink-0">
-                          <Clock className="w-3.5 h-3.5 text-zinc-400" />
-                          <span className="text-sm lg:text-base font-mono font-bold text-zinc-500 uppercase">
-                            {event.time.split(" - ").map(formatTime).join("-")}
-                          </span>
+                        <div className="flex items-center justify-between gap-2 mb-2 shrink-0">
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                            <span className="text-sm lg:text-base font-mono font-bold text-zinc-500 uppercase">
+                              {event.time
+                                .split(" - ")
+                                .map(formatTime)
+                                .join("-")}
+                            </span>
+                          </div>
+                          {event.isVideo && (
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-500 shadow-sm border border-blue-400/20">
+                              <Video
+                                className="w-3 h-3 text-white"
+                                strokeWidth={3}
+                              />
+                              <span className="text-[9px] font-black font-mono text-white uppercase tracking-wider">
+                                Video
+                              </span>
+                            </div>
+                          )}
                         </div>
-                        <h4 className="font-serif font-bold text-xs lg:text-sm text-zinc-900 dark:text-white leading-tight mb-1 whitespace-normal">
+                        <h4 className="font-serif font-bold text-xs lg:text-sm text-zinc-900 dark:text-white leading-tight mb-2 whitespace-normal">
                           {event.materia}
                         </h4>
-                        <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 shrink-0 mt-auto">
-                          <MapPin className="w-3 h-3 shrink-0" />
-                          <span className="truncate">{event.aula}</span>
+                        <div className="flex items-start gap-1.5 text-[11px] text-zinc-400 shrink-0 mt-auto">
+                          {event.isVideo ? (
+                            <Video className="w-3.5 h-3.5 shrink-0 text-blue-500 mt-0.5" />
+                          ) : (
+                            <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          )}
+                          <span className="leading-tight">{event.aula}</span>
                         </div>
                         {event.docente && height > 80 && (
                           <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 shrink-0 mt-1">

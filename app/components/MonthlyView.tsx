@@ -11,6 +11,7 @@ import {
   Filter,
   MapPin,
   MoreHorizontal,
+  Video,
 } from "lucide-react";
 import { DateTime } from "luxon";
 import { useEffect, useMemo, useState } from "react";
@@ -462,6 +463,7 @@ export function MonthlyView({
                                 time: ev.time,
                                 docente: ev.professor,
                                 aula: ev.location,
+                                isVideo: ev.isVideo,
                                 fullDate: ev.date ?? undefined,
                               })),
                               materiaColorMap,
@@ -474,18 +476,37 @@ export function MonthlyView({
                             style={{ backgroundColor: color }}
                           />
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Clock className="w-3.5 h-3.5 text-zinc-400" />
-                              <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">
-                                {e.time}
-                              </span>
+                            <div className="flex items-center justify-between gap-2 mb-1.5">
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">
+                                  {e.time}
+                                </span>
+                              </div>
+                              {e.isVideo && (
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-500 shadow-sm border border-blue-400/20">
+                                  <Video
+                                    className="w-2.5 h-2.5 text-white"
+                                    strokeWidth={3}
+                                  />
+                                  <span className="text-[8px] font-black font-mono text-white uppercase tracking-wider">
+                                    Video
+                                  </span>
+                                </div>
+                              )}
                             </div>
-                            <h4 className="font-serif font-bold text-sm text-zinc-900 dark:text-white truncate mb-1">
+                            <h4 className="font-serif font-bold text-sm text-zinc-900 dark:text-white truncate mb-1.5">
                               {parsed.materia}
                             </h4>
-                            <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 truncate">
-                              <MapPin className="w-3 h-3 shrink-0" />
-                              <span className="truncate">{e.location}</span>
+                            <div className="flex items-start gap-1.5 text-[10px] text-zinc-400">
+                              {e.isVideo ? (
+                                <Video className="w-3.5 h-3.5 shrink-0 text-blue-500 mt-0.5" />
+                              ) : (
+                                <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                              )}
+                              <span className="leading-tight">
+                                {e.location}
+                              </span>
                             </div>
                           </div>
                         </motion.button>
@@ -670,6 +691,7 @@ export function MonthlyView({
                                   aula: e.location,
                                   docente: e.professor,
                                   tipo: parsed.tipo,
+                                  isVideo: e.isVideo,
                                   fullDate: e.date ?? undefined,
                                 };
                               }),
