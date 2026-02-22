@@ -55,10 +55,8 @@ interface CoursePanelProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   courses: Course[];
-  selectedCourse: Course | null;
-  setSelectedCourse: (course: Course | null) => void;
-  setPreviewId: (id: string | null) => void;
-  setCalendarUrl: (url: string) => void;
+  selectedCourseIds: string[];
+  toggleCourseSelection: (course: Course) => void;
   setError: (error: string | null) => void;
   copiedCourseId: string | null;
   handleCopyCourseLink: (
@@ -68,7 +66,7 @@ interface CoursePanelProps {
   ) => void;
   newCourseName: string;
   setNewCourseName: (name: string) => void;
-  previewId: string | null;
+  previewIds: string[];
   handleCopyLink: () => void;
   copiedLink: boolean;
   calendarUrl: string;
@@ -85,16 +83,14 @@ const CoursePanel = ({
   searchQuery,
   setSearchQuery,
   courses,
-  selectedCourse,
-  setSelectedCourse,
-  setPreviewId,
-  setCalendarUrl,
+  selectedCourseIds,
+  toggleCourseSelection,
   setError,
   copiedCourseId,
   handleCopyCourseLink,
   newCourseName,
   setNewCourseName,
-  previewId,
+  previewIds,
   handleCopyLink,
   copiedLink,
   calendarUrl,
@@ -116,7 +112,8 @@ const CoursePanel = ({
   >
     <div className="px-4 pt-4 pb-3 border-b border-zinc-100 dark:border-zinc-900 bg-white dark:bg-black sticky top-0 z-10">
       <p className="text-xs text-zinc-500 mb-3 px-1 font-serif italic">
-        Scegli un corso dall'elenco o aggiungine uno nuovo se non è presente.
+        Scegli uno o più corsi dall'elenco o aggiungine uno nuovo se non è
+        presente.
       </p>
       <div className="flex border-b border-zinc-100 dark:border-zinc-900 -mx-4 px-4 mb-3">
         <button
@@ -131,7 +128,7 @@ const CoursePanel = ({
         >
           <div className="flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
-            <span>Seleziona Corso</span>
+            <span>Seleziona Corsi</span>
           </div>
         </button>
         <button
@@ -171,97 +168,109 @@ const CoursePanel = ({
             .filter((course) =>
               course.name.toLowerCase().includes(searchQuery.toLowerCase()),
             )
-            .map((course) => (
-              <div key={course.id} className="relative group">
-                <button
-                  type="button"
-                  className={cn(
-                    "w-full flex flex-col gap-2 p-3 pr-12 rounded-xl border transition-all text-left relative overflow-hidden",
-                    selectedCourse?.id === course.id
-                      ? "bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white shadow-md"
-                      : "bg-white dark:bg-black border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900/50",
-                  )}
-                  onClick={() => {
-                    setSelectedCourse(course);
-                    setPreviewId(course.linkId);
-                    setCalendarUrl("");
-                    setError(null);
-                  }}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className={cn(
-                        "w-2 h-2 rounded-full border-2 transition-colors shrink-0",
-                        selectedCourse?.id === course.id
-                          ? "border-white dark:border-black bg-white dark:bg-black"
-                          : "border-zinc-300 dark:border-zinc-700",
-                      )}
-                    />
-                    <span
-                      className={cn(
-                        "font-bold text-xs truncate",
-                        selectedCourse?.id === course.id
-                          ? "text-white dark:text-black"
-                          : "text-zinc-900 dark:text-white",
-                      )}
-                    >
-                      {course.name}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2 ml-[18px]">
-                    {course.year && (
-                      <span
+            .map((course) => {
+              const isSelected = selectedCourseIds.includes(course.id);
+              return (
+                <div key={course.id} className="relative group">
+                  <button
+                    type="button"
+                    className={cn(
+                      "w-full flex flex-col gap-2 p-3 pr-12 rounded-xl border transition-all text-left relative overflow-hidden",
+                      isSelected
+                        ? "bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white shadow-md"
+                        : "bg-white dark:bg-black border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900/50",
+                    )}
+                    onClick={() => {
+                      toggleCourseSelection(course);
+                      setError(null);
+                    }}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div
                         className={cn(
-                          "text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tight border font-mono",
-                          selectedCourse?.id === course.id
-                            ? "bg-white/10 border-white/20 text-white dark:text-black"
-                            : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400",
+                          "w-5 h-5 rounded-md border-2 transition-colors shrink-0 flex items-center justify-center",
+                          isSelected
+                            ? "border-white dark:border-black bg-white dark:bg-black"
+                            : "border-zinc-300 dark:border-zinc-700",
                         )}
                       >
-                        {course.year}° Anno
-                      </span>
-                    )}
-                    {course.academicYear && (
+                        {isSelected && (
+                          <Check
+                            className={cn(
+                              "w-3.5 h-3.5",
+                              isSelected
+                                ? "text-zinc-900 dark:text-white"
+                                : "text-white dark:text-black",
+                            )}
+                          />
+                        )}
+                      </div>
                       <span
                         className={cn(
-                          "text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tight border font-mono",
-                          selectedCourse?.id === course.id
-                            ? "bg-white/10 border-white/20 text-white dark:text-black"
-                            : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400",
+                          "font-bold text-xs truncate",
+                          isSelected
+                            ? "text-white dark:text-black"
+                            : "text-zinc-900 dark:text-white",
                         )}
                       >
-                        {course.academicYear}
+                        {course.name}
                       </span>
-                    )}
-                  </div>
-                </button>
+                    </div>
 
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCopyCourseLink(course.linkId, course.id, e);
-                  }}
-                  className={cn(
-                    "absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all shrink-0 z-10",
-                    copiedCourseId === course.id
-                      ? selectedCourse?.id === course.id
-                        ? "bg-white/20 text-white dark:text-black"
-                        : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
-                      : selectedCourse?.id === course.id
-                        ? "bg-white/10 text-white dark:text-black hover:bg-white/20"
-                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-white",
-                  )}
-                >
-                  {copiedCourseId === course.id ? (
-                    <Check className="w-3.5 h-3.5" />
-                  ) : (
-                    <Link2 className="w-3.5 h-3.5" />
-                  )}
-                </button>
-              </div>
-            ))}
+                    <div className="flex items-center gap-2 ml-[28px]">
+                      {course.year && (
+                        <span
+                          className={cn(
+                            "text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tight border font-mono",
+                            isSelected
+                              ? "bg-white/10 border-white/20 text-white dark:text-black"
+                              : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400",
+                          )}
+                        >
+                          {course.year}° Anno
+                        </span>
+                      )}
+                      {course.academicYear && (
+                        <span
+                          className={cn(
+                            "text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tight border font-mono",
+                            isSelected
+                              ? "bg-white/10 border-white/20 text-white dark:text-black"
+                              : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400",
+                          )}
+                        >
+                          {course.academicYear}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopyCourseLink(course.linkId, course.id, e);
+                    }}
+                    className={cn(
+                      "absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all shrink-0 z-10",
+                      copiedCourseId === course.id
+                        ? isSelected
+                          ? "bg-white/20 text-white dark:text-black"
+                          : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300"
+                        : isSelected
+                          ? "bg-white/10 text-white dark:text-black hover:bg-white/20"
+                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-white",
+                    )}
+                  >
+                    {copiedCourseId === course.id ? (
+                      <Check className="w-3.5 h-3.5" />
+                    ) : (
+                      <Link2 className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+              );
+            })}
         </div>
       ) : (
         <div className="space-y-4 pt-2">
@@ -309,7 +318,7 @@ const CoursePanel = ({
                 >
                   Link Calendario Cineca
                 </label>
-                {previewId && (
+                {previewIds.length > 0 && (
                   <button
                     type="button"
                     onClick={handleCopyLink}
@@ -503,15 +512,25 @@ export function SettingsDialog({
   forceOpen = false,
 }: SettingsDialogProps) {
   const router = useRouter();
-  const [calendarId, setCalendarId] = useLocalStorage<string>("calendarId", "");
-  const [_courseName, setCourseName] = useLocalStorage<string>(
-    "courseName",
-    "",
+  // Multiple courses support
+  const [calendarIds, setCalendarIds] = useLocalStorage<string[]>(
+    "calendarIds",
+    [],
   );
+  const [courseNames, setCourseNames] = useLocalStorage<string[]>(
+    "courseNames",
+    [],
+  );
+  const [courseIds, setCourseIds] = useLocalStorage<string[]>("courseIds", []);
+
+  // Backward compatibility
+  const [calendarId, setCalendarId] = useLocalStorage<string>("calendarId", "");
+  const [courseName, setCourseName] = useLocalStorage<string>("courseName", "");
   const [storedCourseId, setStoredCourseId] = useLocalStorage<string>(
     "courseId",
     "",
   );
+
   const [calendarUrlStore, setCalendarUrlStore] = useLocalStorage<string>(
     "calendarUrl",
     "",
@@ -522,9 +541,9 @@ export function SettingsDialog({
     INITIAL_HIDDEN_SUBJECTS,
   );
   const [error, setError] = useState<string | null>(null);
-  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [previewIds, setPreviewIds] = useState<string[]>([]);
 
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [selectedCourses, setSelectedCourses] = useState<Course[]>([]);
   const [activeTab, setActiveTab] = useState<"select" | "add">("select");
   const [newCourseName, setNewCourseName] = useState("");
   const [newCourseYear, setNewCourseYear] = useState<number | "">("");
@@ -550,61 +569,61 @@ export function SettingsDialog({
     },
   });
 
-  useEffect(() => {
-    if (!isOpen) {
-      setIsInitialized(false);
-      setPreviewId(null);
-      setSelectedCourse(null);
-      setTimeout(() => setDialogStep("course"), 200); // Reset after exit animation
-    }
-  }, [isOpen]);
-
+  // Migration and Initialization
   useEffect(() => {
     if (isOpen && !isInitialized) {
+      // Migrate single values to arrays if arrays are empty but single values exist
+      if (calendarIds.length === 0 && calendarId) {
+        setCalendarIds([calendarId]);
+        setCourseNames([courseName]);
+        setCourseIds([storedCourseId]);
+      }
+
       if (calendarUrlStore) {
         setCalendarUrl(calendarUrlStore);
         const extracted = extractCalendarId(calendarUrlStore);
-        if (extracted) setPreviewId(extracted);
+        if (extracted) setPreviewIds([extracted]);
+      } else if (calendarIds.length > 0) {
+        setPreviewIds(calendarIds);
       } else if (calendarId) {
-        setPreviewId(calendarId);
+        setPreviewIds([calendarId]);
       }
       setIsInitialized(true);
     }
-  }, [isOpen, isInitialized, calendarId, calendarUrlStore]);
-
-  useEffect(() => {
-    if (isOpen && courses.length > 0 && !selectedCourse) {
-      let matchedCourse: Course | undefined;
-
-      if (storedCourseId) {
-        matchedCourse = courses.find((c) => c.id === storedCourseId);
-      }
-
-      if (!matchedCourse && calendarId) {
-        matchedCourse = courses.find((c) => c.linkId === calendarId);
-      }
-
-      if (matchedCourse) {
-        setSelectedCourse(matchedCourse);
-        setActiveTab("select");
-        if (!calendarUrlStore) {
-          setPreviewId(matchedCourse.linkId);
-        }
-      }
-    }
   }, [
     isOpen,
-    courses,
-    selectedCourse,
-    storedCourseId,
+    isInitialized,
+    calendarIds,
     calendarId,
+    courseName,
+    storedCourseId,
     calendarUrlStore,
+    setCalendarIds,
+    setCourseNames,
+    setCourseIds,
   ]);
+
+  useEffect(() => {
+    if (isOpen && courses.length > 0 && selectedCourses.length === 0) {
+      const activeIds =
+        courseIds.length > 0
+          ? courseIds
+          : storedCourseId
+            ? [storedCourseId]
+            : [];
+      const matchedCourses = courses.filter((c) => activeIds.includes(c.id));
+
+      if (matchedCourses.length > 0) {
+        setSelectedCourses(matchedCourses);
+        setActiveTab("select");
+      }
+    }
+  }, [isOpen, courses, selectedCourses.length, courseIds, storedCourseId]);
 
   const { data: availableSubjects, isLoading } =
     api.orario.getSubjects.useQuery(
-      { linkId: previewId ?? "" },
-      { enabled: !!previewId },
+      { linkIds: previewIds },
+      { enabled: previewIds.length > 0 },
     );
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -614,20 +633,37 @@ export function SettingsDialog({
     setCopiedLink(false);
 
     if (url.trim() === "") {
-      setPreviewId(calendarId || null);
+      setPreviewIds(
+        calendarIds.length > 0 ? calendarIds : calendarId ? [calendarId] : [],
+      );
       return;
     }
 
     const extractedId = extractCalendarId(url);
     if (extractedId) {
-      setPreviewId(extractedId);
+      setPreviewIds([extractedId]);
     } else {
-      setPreviewId(null);
+      setPreviewIds([]);
     }
   };
 
+  const toggleCourseSelection = (course: Course) => {
+    setSelectedCourses((prev) => {
+      const exists = prev.find((c) => c.id === course.id);
+      if (exists) {
+        const filtered = prev.filter((c) => c.id !== course.id);
+        setPreviewIds(filtered.map((c) => c.linkId));
+        return filtered;
+      }
+      const updated = [...prev, course];
+      setPreviewIds(updated.map((c) => c.linkId));
+      return updated;
+    });
+  };
+
   const handleCopyLink = async () => {
-    const linkToCopy = calendarUrl || previewId || "";
+    const linkToCopy =
+      calendarUrl || (previewIds.length > 0 ? previewIds[0] : "");
     if (!linkToCopy) return;
 
     try {
@@ -655,56 +691,71 @@ export function SettingsDialog({
   };
 
   const handleSave = async () => {
-    if (!previewId) {
-      setError("Nessun corso valido selezionato.");
-      return;
-    }
+    if (activeTab === "add") {
+      if (previewIds.length === 0) {
+        setError("Link calendario non valido.");
+        return;
+      }
+      if (!newCourseName.trim()) {
+        setError("Inserisci il nome del corso.");
+        return;
+      }
+      if (newCourseYear === "") {
+        setError("Specifica l'anno del corso.");
+        return;
+      }
 
-    if (activeTab === "add" && !newCourseName.trim()) {
-      setError("Inserisci il nome del corso.");
-      setDialogStep("course");
-      return;
-    }
-
-    if (activeTab === "add" && newCourseYear === "") {
-      setError("Specifica l'anno del corso.");
-      setDialogStep("course");
-      return;
-    }
-
-    if (activeTab === "add" && newCourseName.trim()) {
       try {
         const newCourse = await addCourseMutation.mutateAsync({
           name: newCourseName.trim(),
-          linkId: previewId,
+          linkId: previewIds[0],
           year: newCourseYear as number,
           academicYear: newAcademicYear || undefined,
           userId: userId,
           addedBy: "user",
         });
 
-        setCalendarId(previewId);
+        const newIds = [...calendarIds, previewIds[0]];
+        const newNames = [...courseNames, newCourseName.trim()];
+        const newCourseIds = [...courseIds, newCourse.id];
+
+        setCalendarIds(newIds);
+        setCourseNames(newNames);
+        setCourseIds(newCourseIds);
+
+        // Clear single storage for new users or migrated ones
+        setCalendarId("");
+        setCourseName("");
+        setStoredCourseId("");
+
         if (calendarUrl.includes("http")) {
           setCalendarUrlStore(calendarUrl);
         } else {
           setCalendarUrlStore("");
         }
-        setCourseName(newCourseName.trim());
-        setStoredCourseId(newCourse.id);
         onClose();
       } catch (error) {
         console.error("Errore durante l'aggiunta del corso:", error);
+      }
+    } else {
+      if (selectedCourses.length === 0) {
+        setError("Seleziona almeno un corso.");
         return;
       }
-    } else if (selectedCourse) {
-      setCalendarId(previewId);
-      if (calendarUrl.includes("http")) {
-        setCalendarUrlStore(calendarUrl);
-      } else {
-        setCalendarUrlStore("");
-      }
-      setCourseName(selectedCourse.name);
-      setStoredCourseId(selectedCourse.id);
+
+      const newIds = selectedCourses.map((c) => c.linkId);
+      const newNames = selectedCourses.map((c) => c.name);
+      const newCourseIds = selectedCourses.map((c) => c.id);
+
+      setCalendarIds(newIds);
+      setCourseNames(newNames);
+      setCourseIds(newCourseIds);
+
+      // Clear legacy
+      setCalendarId("");
+      setCourseName("");
+      setStoredCourseId("");
+
       onClose();
     }
   };
@@ -718,7 +769,8 @@ export function SettingsDialog({
   };
 
   if (!isOpen && !forceOpen) return null;
-  const canClose = !forceOpen || (forceOpen && calendarId);
+  const hasConfigured = calendarIds.length > 0 || calendarId;
+  const canClose = !forceOpen || (forceOpen && hasConfigured);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-2 portrait:p-4 animate-in fade-in duration-200">
@@ -746,7 +798,7 @@ export function SettingsDialog({
             <div>
               <h2 className="text-lg font-bold text-zinc-900 dark:text-white tracking-tight font-serif">
                 {dialogStep === "course"
-                  ? "Configura Corso"
+                  ? "Configura Corsi"
                   : "Seleziona Materie"}
               </h2>
               <p className="text-xs text-zinc-500 font-medium font-serif italic opacity-80 -mt-0.5">
@@ -777,16 +829,14 @@ export function SettingsDialog({
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
                 courses={courses}
-                selectedCourse={selectedCourse}
-                setSelectedCourse={setSelectedCourse}
-                setPreviewId={setPreviewId}
-                setCalendarUrl={setCalendarUrl}
+                selectedCourseIds={selectedCourses.map((c) => c.id)}
+                toggleCourseSelection={toggleCourseSelection}
                 setError={setError}
                 copiedCourseId={copiedCourseId}
                 handleCopyCourseLink={handleCopyCourseLink}
                 newCourseName={newCourseName}
                 setNewCourseName={setNewCourseName}
-                previewId={previewId}
+                previewIds={previewIds}
                 handleCopyLink={handleCopyLink}
                 copiedLink={copiedLink}
                 calendarUrl={calendarUrl}
@@ -821,7 +871,7 @@ export function SettingsDialog({
             <button
               type="button"
               onClick={() => setDialogStep("subjects")}
-              disabled={!previewId}
+              disabled={previewIds.length === 0}
               className="w-full flex items-center justify-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-black py-2.5 rounded-xl font-extrabold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs shadow-lg active:scale-[0.98] font-mono uppercase tracking-widest"
             >
               <span>Prosegui</span>
@@ -840,7 +890,7 @@ export function SettingsDialog({
               <button
                 type="button"
                 onClick={handleSave}
-                disabled={!previewId}
+                disabled={previewIds.length === 0}
                 className="flex-[2] flex items-center justify-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-black py-2.5 rounded-xl font-extrabold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs shadow-lg active:scale-[0.98] font-mono uppercase tracking-widest"
               >
                 <Save className="w-4 h-4" />

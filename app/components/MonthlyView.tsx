@@ -44,11 +44,16 @@ export function MonthlyView({
   const [currentDate, setCurrentDate] = useState(
     DateTime.now().setLocale("it"),
   );
-  const [calendarId] = useLocalStorage<string>("calendarId", "");
+  const [calendarIds] = useLocalStorage<string[]>("calendarIds", []);
+  const [calendarId] = useLocalStorage<string>("calendarId", ""); // Backward compat
   const [hiddenSubjects, setHiddenSubjects] = useLocalStorage<string[]>(
     "hiddenSubjects",
     [],
   );
+
+  const activeLinkIds =
+    calendarIds.length > 0 ? calendarIds : calendarId ? [calendarId] : [];
+
   const [direction, setDirection] = useState(0);
   const [isLandscape, setIsLandscape] = useState(false);
   const [_isMobile, setIsMobile] = useState(false);
@@ -79,11 +84,11 @@ export function MonthlyView({
       {
         year: currentDate.year,
         month: currentDate.month,
-        linkId: calendarId || "",
+        linkIds: activeLinkIds,
         location: "Varese",
       },
       {
-        enabled: !!calendarId,
+        enabled: activeLinkIds.length > 0,
         placeholderData: (previousData) => previousData,
       },
     );
@@ -405,18 +410,30 @@ export function MonthlyView({
                           {day.date.day}
                         </span>
                         {uniqueMaterie.length > 0 && (
-                          <div className="grid grid-cols-2 gap-0.5">
-                            {uniqueMaterie.slice(0, 4).map((m) => (
+                          <div className="grid grid-cols-2 gap-0.5 overflow-hidden p-0.5">
+                            {uniqueMaterie
+                              .slice(0, uniqueMaterie.length > 4 ? 3 : 4)
+                              .map((m) => (
+                                <div
+                                  key={m}
+                                  className="w-1 h-1 rounded-full shadow-sm"
+                                  style={{
+                                    backgroundColor: isSelected
+                                      ? "white"
+                                      : getMateriaColor(m),
+                                  }}
+                                />
+                              ))}
+                            {uniqueMaterie.length > 4 && (
                               <div
-                                key={m}
                                 className="w-1 h-1 rounded-full shadow-sm"
                                 style={{
                                   backgroundColor: isSelected
-                                    ? "white"
-                                    : getMateriaColor(m),
+                                    ? "rgba(255,255,255,0.3)"
+                                    : "#d1d5db",
                                 }}
                               />
-                            ))}
+                            )}
                           </div>
                         )}
                       </button>
@@ -483,19 +500,8 @@ export function MonthlyView({
                                   {e.time}
                                 </span>
                               </div>
-                              {e.isVideo && (
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-500 shadow-sm border border-blue-400/20">
-                                  <Video
-                                    className="w-2.5 h-2.5 text-white"
-                                    strokeWidth={3}
-                                  />
-                                  <span className="text-[8px] font-black font-mono text-white uppercase tracking-wider">
-                                    Video
-                                  </span>
-                                </div>
-                              )}
                             </div>
-                            <h4 className="font-serif font-bold text-sm text-zinc-900 dark:text-white truncate mb-1.5">
+                            <h4 className="font-serif font-bold text-sm text-zinc-900 dark:text-white line-clamp-2 mb-1.5">
                               {parsed.materia}
                             </h4>
                             <div className="flex items-start gap-1.5 text-[10px] text-zinc-400">
@@ -504,7 +510,7 @@ export function MonthlyView({
                               ) : (
                                 <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                               )}
-                              <span className="leading-tight">
+                              <span className="leading-tight whitespace-normal">
                                 {e.location}
                               </span>
                             </div>
@@ -700,7 +706,7 @@ export function MonthlyView({
                           }
                         }}
                         className={cn(
-                          "relative flex flex-col items-center justify-center aspect-[0.8/1] lg:aspect-square w-full rounded-xl lg:rounded-[2rem] transition-all border shadow-sm",
+                          "relative flex flex-col items-center justify-center min-h-[50px] lg:min-h-[80px] w-full rounded-xl lg:rounded-[2rem] transition-all border shadow-sm py-2",
                           !isCurrentMonth && "opacity-0 pointer-events-none",
                           isCurrentMonth &&
                             "bg-white dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800",
@@ -723,16 +729,22 @@ export function MonthlyView({
                           {day.date.day}
                         </span>
                         {uniqueMaterie.length > 0 && (
-                          <div className="grid grid-cols-2 gap-1 lg:gap-1.5">
-                            {uniqueMaterie.slice(0, 4).map((materiaName) => (
-                              <div
-                                key={materiaName}
-                                className="w-1.5 h-1.5 lg:w-2.5 lg:h-2.5 rounded-full shadow-sm opacity-90"
-                                style={{
-                                  backgroundColor: getMateriaColor(materiaName),
-                                }}
-                              />
-                            ))}
+                          <div className="grid grid-cols-2 gap-1 lg:gap-1.5 p-1">
+                            {uniqueMaterie
+                              .slice(0, uniqueMaterie.length > 4 ? 3 : 4)
+                              .map((materiaName) => (
+                                <div
+                                  key={materiaName}
+                                  className="w-1.5 h-1.5 lg:w-2.5 lg:h-2.5 rounded-full shadow-sm opacity-90"
+                                  style={{
+                                    backgroundColor:
+                                      getMateriaColor(materiaName),
+                                  }}
+                                />
+                              ))}
+                            {uniqueMaterie.length > 4 && (
+                              <div className="w-1.5 h-1.5 lg:w-2.5 lg:h-2.5 rounded-full shadow-sm bg-zinc-300 dark:bg-zinc-600 opacity-90" />
+                            )}
                           </div>
                         )}
                       </button>

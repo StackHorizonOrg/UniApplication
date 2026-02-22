@@ -27,8 +27,9 @@ export default function Home() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDay, setSelectedDay] = useState<DaySchedule | null>(null);
   const [activeView, setActiveView] = useState<"week" | "month">("week");
-  const [calendarId] = useLocalStorage<string>("calendarId", "");
-  const [courseName] = useLocalStorage<string>("courseName", "");
+  const [calendarIds] = useLocalStorage<string[]>("calendarIds", []);
+  const [calendarId] = useLocalStorage<string>("calendarId", ""); // Still keep for backward compatibility during transition
+  const [courseNames] = useLocalStorage<string[]>("courseNames", []);
   const [hasSeenWelcome, setHasSeenWelcome] = useLocalStorage<boolean>(
     "hasSeenWelcomeV2",
     false,
@@ -38,9 +39,13 @@ export default function Home() {
   const [isClient, setIsClient] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
 
+  // Effective IDs to use for queries
+  const activeLinkIds =
+    calendarIds.length > 0 ? calendarIds : calendarId ? [calendarId] : [];
+
   useEffect(() => {
     setIsClient(true);
-    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
     checkDesktop();
     window.addEventListener("resize", checkDesktop);
     return () => window.removeEventListener("resize", checkDesktop);
@@ -50,15 +55,15 @@ export default function Home() {
     if (isClient && !hasSeenWelcome) {
       setIsWelcomeOpen(true);
       setIsSettingsOpen(false);
-    } else if (isClient && hasSeenWelcome && !calendarId) {
+    } else if (isClient && hasSeenWelcome && activeLinkIds.length === 0) {
       setIsSettingsOpen(true);
     }
-  }, [isClient, calendarId, hasSeenWelcome]);
+  }, [isClient, activeLinkIds.length, hasSeenWelcome]);
 
   const handleWelcomeComplete = () => {
     setHasSeenWelcome(true);
     setIsWelcomeOpen(false);
-    if (!calendarId) {
+    if (activeLinkIds.length === 0) {
       setTimeout(() => {
         setIsSettingsOpen(true);
       }, 300);
@@ -74,17 +79,17 @@ export default function Home() {
       name: "INFORMATICA",
       location: "Varese",
       dayOffset: weekOffset,
-      linkId: calendarId,
+      linkIds: activeLinkIds,
     },
     {
       placeholderData: (previousData) => previousData,
-      enabled: !!calendarId,
+      enabled: activeLinkIds.length > 0,
     },
   );
 
   const { data: allSubjects = [] } = api.orario.getSubjects.useQuery(
-    { linkId: calendarId },
-    { enabled: !!calendarId },
+    { linkIds: activeLinkIds },
+    { enabled: activeLinkIds.length > 0 },
   );
 
   const schedule = orario ? parseOrarioData(orario) : [];
@@ -98,7 +103,9 @@ export default function Home() {
     return null;
   }
 
-  if (isLoading && !orario && calendarId) {
+  const hasConfiguredCourses = activeLinkIds.length > 0;
+
+  if (isLoading && !orario && hasConfiguredCourses) {
     return (
       <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center">
         <div className="text-center">
@@ -111,13 +118,13 @@ export default function Home() {
         <SettingsDialog
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
-          forceOpen={hasSeenWelcome && !calendarId}
+          forceOpen={hasSeenWelcome && !hasConfiguredCourses}
         />
       </div>
     );
   }
 
-  if (error && calendarId) {
+  if (error && hasConfiguredCourses) {
     return (
       <div className="min-h-screen bg-white dark:bg-black flex items-center justify-center p-6">
         <div className="text-center max-w-sm">
@@ -155,22 +162,29 @@ export default function Home() {
         <SettingsDialog
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
-          forceOpen={hasSeenWelcome && !calendarId}
+          forceOpen={hasSeenWelcome && !hasConfiguredCourses}
         />
       </div>
     );
   }
 
+  const displayTitle =
+    courseNames.length > 0
+      ? courseNames.length > 1
+        ? `${courseNames[0]} (+${courseNames.length - 1})`
+        : courseNames[0]
+      : "Orario Insubria";
+
   return (
     <div className="h-[100dvh] bg-white dark:bg-black text-zinc-900 dark:text-white flex flex-col overflow-hidden fixed inset-0">
-      <main className="w-full px-4 py-3 portrait:py-4 lg:px-8 lg:py-6 flex-1 max-w-screen-2xl mx-auto flex flex-col overflow-hidden">
+      <main className="w-full px-4 py-3 portrait:py-4 md:px-6 lg:px-8 lg:py-6 flex-1 max-w-screen-2xl mx-auto flex flex-col overflow-hidden">
         <header className="flex items-center justify-between mb-4 lg:mb-8 flex-shrink-0 gap-4">
           <div className="flex-1 min-w-0">
             <div className="flex flex-col min-w-0 cursor-default select-none group focus:outline-none text-left max-w-full">
               <h1 className="text-base lg:text-lg font-bold text-zinc-900 dark:text-white font-serif tracking-tight truncate leading-none w-full">
-                {courseName || "Orario Insubria"}
+                {displayTitle}
               </h1>
-              {courseName && (
+              {courseNames.length > 0 && (
                 <p className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest mt-1 truncate w-full">
                   Orario Insubria
                 </p>
@@ -219,15 +233,15 @@ export default function Home() {
           </div>
         </header>
 
-        {calendarId ? (
+        {hasConfiguredCourses ? (
           <div className="flex flex-col flex-1 min-h-0">
             {activeView === "week" ? (
-              <div className="flex flex-col landscape:flex-row lg:grid lg:grid-cols-12 gap-2 landscape:gap-6 portrait:gap-6 lg:gap-10 flex-1 min-h-0">
-                <section className="w-full landscape:w-[350px] lg:w-full lg:col-span-3 flex-shrink-0 min-w-0 flex flex-col">
+              <div className="flex flex-col md:grid md:grid-cols-12 gap-3 lg:gap-6 xl:gap-8 flex-1 min-h-0">
+                <section className="w-full md:col-span-4 lg:col-span-3 xl:col-span-3 flex-shrink-0 min-w-0 flex flex-col">
                   <NextLessonCard schedule={schedule} />
                 </section>
 
-                <section className="w-full flex-1 min-h-0 flex flex-col landscape:flex-1 lg:w-full lg:col-span-5">
+                <section className="w-full flex-1 min-h-0 flex flex-col md:col-span-8 lg:col-span-4 xl:col-span-4">
                   <CalendarView
                     schedule={schedule}
                     weekOffset={weekOffset}
@@ -241,7 +255,7 @@ export default function Home() {
                   />
                 </section>
 
-                <section className="hidden lg:flex flex-col lg:col-span-4 min-w-0 min-h-0">
+                <section className="hidden lg:flex flex-col lg:col-span-5 xl:col-span-5 min-w-0 min-h-0">
                   <DayView
                     day={selectedDay}
                     materiaColorMap={materiaColorMap}
@@ -249,14 +263,14 @@ export default function Home() {
                 </section>
               </div>
             ) : (
-              <div className="flex flex-col landscape:flex-row lg:grid lg:grid-cols-12 gap-2 landscape:gap-6 portrait:gap-6 lg:gap-10 flex-1 min-h-0 h-full">
-                <section className="flex-1 min-h-0 flex flex-col lg:col-span-8 h-full">
+              <div className="flex flex-col md:grid md:grid-cols-12 gap-3 lg:gap-6 xl:gap-8 flex-1 min-h-0 h-full">
+                <section className="flex-1 min-h-0 flex flex-col md:col-span-12 lg:col-span-7 xl:col-span-8 h-full">
                   <MonthlyView
                     onDaySelect={setSelectedDay}
                     materiaColorMap={materiaColorMap}
                   />
                 </section>
-                <section className="hidden lg:block lg:col-span-4 min-h-0 h-full">
+                <section className="hidden lg:block lg:col-span-5 xl:col-span-4 min-h-0 h-full">
                   <DayView
                     day={selectedDay}
                     materiaColorMap={materiaColorMap}
@@ -275,7 +289,7 @@ export default function Home() {
                 Nessun calendario
               </h2>
               <p className="text-zinc-500 text-sm font-medium leading-relaxed">
-                Configura il tuo corso di studi per iniziare a visualizzare
+                Configura i tuoi corsi di studi per iniziare a visualizzare
                 l'orario delle lezioni.
               </p>
             </div>
@@ -298,7 +312,7 @@ export default function Home() {
       <SettingsDialog
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        forceOpen={hasSeenWelcome && !calendarId}
+        forceOpen={hasSeenWelcome && !hasConfiguredCourses}
       />
 
       <AnimatePresence>

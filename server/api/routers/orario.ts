@@ -92,7 +92,10 @@ const processEvents = (
   }));
 
   for (const e of events) {
-    const title = e.nome || "Lezione";
+    const rawTitle = e.nome || "Lezione";
+    const aulaMatch = rawTitle.match(/^(.+?)Aula/);
+    const title = aulaMatch ? aulaMatch[1].trim() : rawTitle;
+
     const hasComoRooms = (e.aule || []).some(
       (a) =>
         (a.edificio?.comune || "").toUpperCase().includes("COMO") ||
@@ -254,12 +257,19 @@ export const orarioRouter = createTRPCRouter({
         location: z.enum(["Varese", "Como", "Tutte"]).default("Tutte"),
         dayOffset: z.number().default(0),
         linkId: z.string().optional(),
+        linkIds: z.array(z.string()).optional(),
       }),
     )
     .query(async ({ input }) => {
-      if (!input.linkId) return [];
-      const rawEvents = await fetchRawEvents(input.dayOffset, input.linkId);
-      return processEvents(rawEvents, input.name, input.location);
+      const ids = input.linkIds || (input.linkId ? [input.linkId] : []);
+      if (ids.length === 0) return [];
+
+      const allRawEvents = await Promise.all(
+        ids.map((id) => fetchRawEvents(input.dayOffset, id)),
+      );
+      const combinedEvents = allRawEvents.flat();
+
+      return processEvents(combinedEvents, input.name, input.location);
     }),
 
   getMonthlyOrario: publicProcedure
@@ -270,10 +280,12 @@ export const orarioRouter = createTRPCRouter({
         year: z.number(),
         month: z.number(),
         linkId: z.string().optional(),
+        linkIds: z.array(z.string()).optional(),
       }),
     )
     .query(async ({ input }) => {
-      if (!input.linkId) return [];
+      const ids = input.linkIds || (input.linkId ? [input.linkId] : []);
+      if (ids.length === 0) return [];
 
       const startRange = DateTime.fromObject(
         { year: input.year, month: input.month, day: 1 },
@@ -281,111 +293,128 @@ export const orarioRouter = createTRPCRouter({
       ).startOf("month");
       const endRange = startRange.endOf("month");
 
-      const url =
-        "https://unins.prod.up.cineca.it/api/Impegni/getImpegniCalendarioPubblico";
-      const body = {
-        mostraImpegniAnnullati: true,
-        mostraIndisponibilitaTotali: false,
-        linkCalendarioId: input.linkId,
-        clienteId: "59f05192a635f443422fe8fd",
-        pianificazioneTemplate: false,
-        dataInizio: startRange.toISO(),
-        dataFine: endRange.toISO(),
+      const fetchForId = async (id: string) => {
+        const url =
+          "https://unins.prod.up.cineca.it/api/Impegni/getImpegniCalendarioPubblico";
+        const body = {
+          mostraImpegniAnnullati: true,
+          mostraIndisponibilitaTotali: false,
+          linkCalendarioId: id,
+          clienteId: "59f05192a635f443422fe8fd",
+          pianificazioneTemplate: false,
+          dataInizio: startRange.toISO(),
+          dataFine: endRange.toISO(),
+        };
+
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+            cache: "no-store",
+          });
+
+          if (!response.ok) throw new Error(`API error: ${response.status}`);
+          const rawData = await response.json();
+          return Array.isArray(rawData) ? rawData : rawData.impegni || [];
+        } catch (error) {
+          console.error(`Failed to fetch monthly orario for ${id}:`, error);
+          return [];
+        }
       };
 
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-          cache: "no-store",
-        });
+      const allRawEvents = await Promise.all(ids.map(fetchForId));
+      const events: CinecaEvent[] = allRawEvents.flat();
 
-        if (!response.ok) throw new Error(`API error: ${response.status}`);
-        const rawData = await response.json();
-        const events: CinecaEvent[] = Array.isArray(rawData)
-          ? rawData
-          : rawData.impegni || [];
+      const processed = events
+        .map((e) => {
+          const date = DateTime.fromISO(e.dataInizio).setZone("Europe/Rome");
+          const rawTitle = e.nome || "Lezione";
+          const aulaMatch = rawTitle.match(/^(.+?)Aula/);
+          const title = aulaMatch ? aulaMatch[1].trim() : rawTitle;
 
-        return events
-          .map((e) => {
-            const date = DateTime.fromISO(e.dataInizio).setZone("Europe/Rome");
-            const title = e.nome || "Lezione";
-            const hasComoRooms = (e.aule || []).some(
+          const hasComoRooms = (e.aule || []).some(
+            (a) =>
+              (a.edificio?.comune || "").toUpperCase().includes("COMO") ||
+              a.descrizione.toUpperCase().includes("COMO"),
+          );
+
+          const isVideoConference =
+            title.toUpperCase().includes("VIDEOCONFERENZA") ||
+            title.toUpperCase().includes("TEAMS") ||
+            title.toUpperCase().includes("VIDEOCHIAMATA") ||
+            hasComoRooms ||
+            (e.aule || []).some(
               (a) =>
-                (a.edificio?.comune || "").toUpperCase().includes("COMO") ||
-                a.descrizione.toUpperCase().includes("COMO"),
+                a.descrizione.toUpperCase().includes("VIDEOCONFERENZA") ||
+                a.descrizione.toUpperCase().includes("TEAMS"),
             );
 
-            const isVideoConference =
-              title.toUpperCase().includes("VIDEOCONFERENZA") ||
-              title.toUpperCase().includes("TEAMS") ||
-              title.toUpperCase().includes("VIDEOCHIAMATA") ||
-              hasComoRooms ||
-              (e.aule || []).some(
-                (a) =>
-                  a.descrizione.toUpperCase().includes("VIDEOCONFERENZA") ||
-                  a.descrizione.toUpperCase().includes("TEAMS"),
-              );
+          let matchesLocation = input.location === "Tutte" || isVideoConference;
 
-            let matchesLocation =
-              input.location === "Tutte" || isVideoConference;
+          const filteredAule = (e.aule || []).filter((aula) => {
+            if (input.location === "Tutte") return true;
+            const name = aula.descrizione;
+            const city = aula.edificio?.comune || "Unknown";
+            const isVarese =
+              city.toUpperCase().includes("VARESE") ||
+              name.toUpperCase().includes("VARESE");
+            const isComo =
+              city.toUpperCase().includes("COMO") ||
+              name.toUpperCase().includes("COMO");
 
-            const filteredAule = (e.aule || []).filter((aula) => {
-              if (input.location === "Tutte") return true;
-              const name = aula.descrizione;
-              const city = aula.edificio?.comune || "Unknown";
-              const isVarese =
-                city.toUpperCase().includes("VARESE") ||
-                name.toUpperCase().includes("VARESE");
-              const isComo =
-                city.toUpperCase().includes("COMO") ||
-                name.toUpperCase().includes("COMO");
+            if (input.location === "Varese") return isVarese;
+            if (input.location === "Como") return isComo;
+            return true;
+          });
 
-              if (input.location === "Varese") return isVarese;
-              if (input.location === "Como") return isComo;
-              return true;
-            });
+          if (input.location !== "Tutte" && !matchesLocation) {
+            matchesLocation = filteredAule.length > 0;
+          }
 
-            if (input.location !== "Tutte" && !matchesLocation) {
-              matchesLocation = filteredAule.length > 0;
-            }
+          if (!matchesLocation) return null;
 
-            if (!matchesLocation) return null;
+          const start = date.toFormat("HH:mm");
+          const end = DateTime.fromISO(e.dataFine)
+            .setZone("Europe/Rome")
+            .toFormat("HH:mm");
 
-            const start = date.toFormat("HH:mm");
-            const end = DateTime.fromISO(e.dataFine)
-              .setZone("Europe/Rome")
-              .toFormat("HH:mm");
+          const location =
+            filteredAule
+              .map((aula) => {
+                const name = aula.descrizione;
+                const city = aula.edificio?.comune || "Unknown";
+                return `${name} (${city})`;
+              })
+              .join(" | ") ||
+            (isVideoConference ? "Videoconferenza Online" : "N/A");
 
-            const location =
-              filteredAule
-                .map((aula) => {
-                  const name = aula.descrizione;
-                  const city = aula.edificio?.comune || "Unknown";
-                  return `${name} (${city})`;
-                })
-                .join(" | ") ||
-              (isVideoConference ? "Videoconferenza Online" : "N/A");
+          return {
+            date: date.toISODate(),
+            day: getDayOfWeek(date),
+            time: `${start} - ${end}`,
+            title,
+            location,
+            professor:
+              e.docenti && e.docenti.length > 0
+                ? `${e.docenti[0].cognome} ${e.docenti[0].nome}`
+                : "N/A",
+            isVideo: isVideoConference,
+          };
+        })
+        .filter((e): e is NonNullable<typeof e> => e !== null);
 
-            return {
-              date: date.toISODate(),
-              day: getDayOfWeek(date),
-              time: `${start} - ${end}`,
-              title,
-              location,
-              professor:
-                e.docenti && e.docenti.length > 0
-                  ? `${e.docenti[0].cognome} ${e.docenti[0].nome}`
-                  : "N/A",
-              isVideo: isVideoConference,
-            };
-          })
-          .filter((e): e is NonNullable<typeof e> => e !== null);
-      } catch (error) {
-        console.error("Failed to fetch monthly orario:", error);
-        return [];
-      }
+      // Remove duplicates after merging
+      return processed.filter(
+        (val, index, self) =>
+          index ===
+          self.findIndex(
+            (t) =>
+              t.date === val.date &&
+              t.time === val.time &&
+              t.title === val.title,
+          ),
+      );
     }),
 
   getNextLesson: publicProcedure
@@ -395,13 +424,23 @@ export const orarioRouter = createTRPCRouter({
         name: z.string().default("INFORMATICA"),
         location: z.enum(["Varese", "Como", "Tutte"]).default("Tutte"),
         linkId: z.string().optional(),
+        linkIds: z.array(z.string()).optional(),
       }),
     )
     .query(async ({ input }) => {
-      if (!input.linkId) return { hasLessons: false, lessons: [], dayName: "" };
+      const ids = input.linkIds || (input.linkId ? [input.linkId] : []);
+      if (ids.length === 0)
+        return { hasLessons: false, lessons: [], dayName: "" };
 
-      const rawEvents = await fetchRawEvents(input.dayOffset, input.linkId);
-      const orarioData = processEvents(rawEvents, input.name, input.location);
+      const allRawEvents = await Promise.all(
+        ids.map((id) => fetchRawEvents(input.dayOffset, id)),
+      );
+      const combinedEvents = allRawEvents.flat();
+      const orarioData = processEvents(
+        combinedEvents,
+        input.name,
+        input.location,
+      );
 
       const currentDate = getCurrentItalianDateTime();
       const targetDate = addDays(currentDate, input.dayOffset);
@@ -454,53 +493,61 @@ export const orarioRouter = createTRPCRouter({
   getSubjects: publicProcedure
     .input(
       z.object({
-        linkId: z.string(),
+        linkId: z.string().optional(),
+        linkIds: z.array(z.string()).optional(),
       }),
     )
     .query(async ({ input }) => {
+      const ids = input.linkIds || (input.linkId ? [input.linkId] : []);
+      if (ids.length === 0) return [];
+
       const currentDate = getCurrentItalianDateTime();
       const startRange = currentDate.startOf("day");
       const endRange = startRange.plus({ months: 6 }).endOf("day");
 
-      const url =
-        "https://unins.prod.up.cineca.it/api/Impegni/getImpegniCalendarioPubblico";
-      const body = {
-        mostraImpegniAnnullati: true,
-        mostraIndisponibilitaTotali: false,
-        linkCalendarioId: input.linkId,
-        clienteId: "59f05192a635f443422fe8fd",
-        pianificazioneTemplate: false,
-        dataInizio: startRange.toISO(),
-        dataFine: endRange.toISO(),
+      const fetchSubjectsForId = async (id: string) => {
+        const url =
+          "https://unins.prod.up.cineca.it/api/Impegni/getImpegniCalendarioPubblico";
+        const body = {
+          mostraImpegniAnnullati: true,
+          mostraIndisponibilitaTotali: false,
+          linkCalendarioId: id,
+          clienteId: "59f05192a635f443422fe8fd",
+          pianificazioneTemplate: false,
+          dataInizio: startRange.toISO(),
+          dataFine: endRange.toISO(),
+        };
+
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+
+          if (!response.ok) throw new Error(`API error: ${response.status}`);
+          const rawData = await response.json();
+          const rawEvents: CinecaEvent[] = Array.isArray(rawData)
+            ? rawData
+            : rawData.impegni || [];
+
+          const localSubjects = new Set<string>();
+          for (const e of rawEvents) {
+            const title = e.nome || "Lezione";
+            const aulaMatch = title.match(/^(.+?)Aula/);
+            const materia = aulaMatch ? aulaMatch[1].trim() : title;
+            localSubjects.add(materia);
+          }
+          return Array.from(localSubjects);
+        } catch (error) {
+          console.error(`Failed to fetch subjects for ${id}:`, error);
+          return [];
+        }
       };
 
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
+      const allSubjectsLists = await Promise.all(ids.map(fetchSubjectsForId));
+      const combinedSubjects = new Set(allSubjectsLists.flat());
 
-        if (!response.ok) throw new Error(`API error: ${response.status}`);
-        const rawData = await response.json();
-        const rawEvents: CinecaEvent[] = Array.isArray(rawData)
-          ? rawData
-          : rawData.impegni || [];
-
-        const subjects = new Set<string>();
-        for (const e of rawEvents) {
-          const title = e.nome || "Lezione";
-
-          const aulaMatch = title.match(/^(.+?)Aula/);
-          const materia = aulaMatch ? aulaMatch[1].trim() : title;
-
-          subjects.add(materia);
-        }
-
-        return Array.from(subjects).sort();
-      } catch (error) {
-        console.error("Failed to fetch subjects:", error);
-        return [];
-      }
+      return Array.from(combinedSubjects).sort();
     }),
 });

@@ -171,31 +171,29 @@ export function CalendarView({
             onDragEnd={handleDragEnd}
             className="touch-none"
           >
-            <div className="px-4 py-2 portrait:p-4 flex items-center justify-between">
-              <div className="flex items-center gap-1">
+            <div className="px-2 sm:px-4 py-2 portrait:p-4 flex items-center justify-between gap-1">
+              <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                 <button
                   type="button"
                   onClick={onReset}
                   className={cn(
-                    "p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all active:scale-90",
-                    weekOffset === 0
-                      ? "opacity-0 pointer-events-none"
-                      : "opacity-100",
+                    "p-1.5 sm:p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all active:scale-90",
+                    weekOffset === 0 ? "hidden" : "block",
                   )}
                 >
-                  <ArrowLeftToLine className="w-4 h-4" />
+                  <ArrowLeftToLine className="w-3.5 h-3.5 sm:w-4 h-4" />
                 </button>
 
                 <button
                   type="button"
                   onClick={handlePrevWeek}
-                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition-all active:scale-90"
+                  className="p-1.5 sm:p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition-all active:scale-90"
                 >
-                  <ChevronLeft className="w-5 h-5 text-zinc-400" />
+                  <ChevronLeft className="w-4 h-4 sm:w-5 h-5 text-zinc-400" />
                 </button>
               </div>
 
-              <div className="text-center flex flex-col items-center flex-1 mx-2 relative min-h-[40px] justify-center">
+              <div className="text-center flex flex-col items-center flex-1 min-w-0 mx-1 relative min-h-[40px] justify-center">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={weekOffset}
@@ -203,7 +201,7 @@ export function CalendarView({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -5 }}
                     transition={{ duration: 0.2 }}
-                    className="flex flex-col items-center w-full"
+                    className="flex flex-col items-center w-full min-w-0"
                   >
                     <Popover
                       open={isCalendarOpen}
@@ -215,10 +213,10 @@ export function CalendarView({
                       <PopoverTrigger asChild>
                         <button
                           type="button"
-                          className="flex items-center justify-center gap-1.5 px-3 py-1 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all font-serif font-bold text-sm"
+                          className="flex items-center justify-center gap-1 px-2 sm:px-3 py-1 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all font-serif font-bold text-xs sm:text-sm min-w-0 w-full"
                         >
                           <span className="truncate">{weekRangeDisplay}</span>
-                          <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+                          <ChevronDown className="w-3 h-3 sm:w-3.5 h-3.5 text-zinc-400 shrink-0" />
                         </button>
                       </PopoverTrigger>
                       <PopoverContent
@@ -258,13 +256,13 @@ export function CalendarView({
                 </AnimatePresence>
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                 <button
                   type="button"
                   onClick={handleNextWeek}
-                  className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition-all active:scale-90"
+                  className="p-1.5 sm:p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition-all active:scale-90"
                 >
-                  <ChevronRight className="w-5 h-5 text-zinc-400" />
+                  <ChevronRight className="w-4 h-4 sm:w-5 h-5 text-zinc-400" />
                 </button>
 
                 {showTabs && (
@@ -275,9 +273,9 @@ export function CalendarView({
                     <PopoverTrigger asChild>
                       <button
                         type="button"
-                        className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition-all active:scale-90"
+                        className="p-1.5 sm:p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition-all active:scale-90"
                       >
-                        <MoreHorizontal className="w-5 h-5 text-zinc-400" />
+                        <MoreHorizontal className="w-4 h-4 sm:w-5 h-5 text-zinc-400" />
                       </button>
                     </PopoverTrigger>
                     <PopoverContent
@@ -367,7 +365,7 @@ export function CalendarView({
                             }
                           }}
                           className={cn(
-                            "relative flex flex-col items-center justify-between py-1.5 lg:py-3 aspect-square flex-1 rounded-xl transition-all border",
+                            "relative flex flex-col items-center justify-between py-1.5 lg:py-2 min-h-[50px] lg:min-h-[70px] flex-1 rounded-xl transition-all border",
                             dayData.hasEvents
                               ? isSelected
                                 ? "bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white shadow-md shadow-zinc-200 dark:shadow-none"
@@ -380,7 +378,7 @@ export function CalendarView({
                         >
                           <span
                             className={cn(
-                              "text-[10px] portrait:text-sm font-mono font-bold",
+                              "text-[10px] sm:text-xs lg:text-sm font-mono font-bold",
                               isSelected
                                 ? "text-white dark:text-black"
                                 : "text-zinc-900 dark:text-zinc-100",
@@ -388,32 +386,55 @@ export function CalendarView({
                           >
                             {dayData.dayOfMonth}
                           </span>
-                          <div className="flex flex-col items-center h-4 lg:h-6 justify-center mb-0.5">
+                          <div className="flex flex-col items-center justify-center mb-0.5">
                             {dayData.hasEvents && (
-                              <div className="grid grid-cols-2 gap-0.5 lg:gap-1">
-                                {Array.from(
-                                  new Set(dayData.events.map((e) => e.materia)),
-                                )
-                                  .slice(0, 4)
-                                  .map((m) => (
-                                    <div
-                                      key={m}
-                                      className={cn(
-                                        "w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full",
-                                        isSelected
-                                          ? "bg-white/50 dark:bg-black/50"
-                                          : "",
+                              <div className="grid grid-cols-2 gap-0.5 lg:gap-1 p-1">
+                                {(() => {
+                                  const uniqueMaterie = Array.from(
+                                    new Set(
+                                      dayData.events.map((e) => e.materia),
+                                    ),
+                                  );
+                                  const displayMaterie =
+                                    uniqueMaterie.length > 4
+                                      ? uniqueMaterie.slice(0, 3)
+                                      : uniqueMaterie.slice(0, 4);
+                                  const hasMore = uniqueMaterie.length > 4;
+
+                                  return (
+                                    <>
+                                      {displayMaterie.map((m) => (
+                                        <div
+                                          key={m}
+                                          className={cn(
+                                            "w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full shrink-0",
+                                            isSelected
+                                              ? "bg-white/50 dark:bg-black/50"
+                                              : "",
+                                          )}
+                                          style={
+                                            !isSelected
+                                              ? {
+                                                  backgroundColor:
+                                                    getMateriaColor(m),
+                                                }
+                                              : {}
+                                          }
+                                        />
+                                      ))}
+                                      {hasMore && (
+                                        <div
+                                          className={cn(
+                                            "w-1 h-1 lg:w-1.5 lg:h-1.5 rounded-full shrink-0",
+                                            isSelected
+                                              ? "bg-white/20 dark:bg-black/20"
+                                              : "bg-zinc-300 dark:bg-zinc-600",
+                                          )}
+                                        />
                                       )}
-                                      style={
-                                        !isSelected
-                                          ? {
-                                              backgroundColor:
-                                                getMateriaColor(m),
-                                            }
-                                          : {}
-                                      }
-                                    />
-                                  ))}
+                                    </>
+                                  );
+                                })()}
                               </div>
                             )}
                           </div>

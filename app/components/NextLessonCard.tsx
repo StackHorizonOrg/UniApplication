@@ -3,6 +3,7 @@
 import { it } from "date-fns/locale";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import {
+  AlertTriangle,
   ArrowLeftToLine,
   Calendar as CalendarIcon,
   ChevronDown,
@@ -20,7 +21,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { api } from "@/lib/api";
+import { timeToMinutes } from "@/lib/date-utils";
 import { useLocalStorage } from "@/lib/hooks";
 import type { DaySchedule } from "@/lib/orario-utils";
 import { cn } from "@/lib/utils";
@@ -36,8 +44,12 @@ export default function NextLessonCard({
   const [isLandscape, setIsLandscape] = useState(false);
   const [direction, setDirection] = useState(0);
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+  const [calendarIds] = useLocalStorage<string[]>("calendarIds", []);
   const [calendarId] = useLocalStorage<string>("calendarId", "");
   const [hiddenSubjects] = useLocalStorage<string[]>("hiddenSubjects", []);
+
+  const activeLinkIds =
+    calendarIds.length > 0 ? calendarIds : calendarId ? [calendarId] : [];
 
   const handleCalendarDragEnd = (_: unknown, info: PanInfo) => {
     const threshold = 50;
@@ -111,9 +123,9 @@ export default function NextLessonCard({
   }, []);
 
   const { data, isFetching } = api.orario.getNextLesson.useQuery(
-    { dayOffset, linkId: calendarId, location: "Varese" },
+    { dayOffset, linkIds: activeLinkIds, location: "Varese" },
     {
-      enabled: !!calendarId,
+      enabled: activeLinkIds.length > 0,
       placeholderData: (previousData) => previousData,
     },
   );
@@ -127,6 +139,28 @@ export default function NextLessonCard({
       ),
     [data, hiddenSubjects],
   );
+
+  const hasOverlap = (
+    lesson: { time: string; title: string },
+    index: number,
+  ) => {
+    if (!lesson.time || !lesson.time.includes(" - ")) return false;
+    const [start, end] = lesson.time.split(" - ");
+    const startMin = timeToMinutes(start);
+    const endMin = timeToMinutes(end);
+    if (startMin === null || endMin === null) return false;
+
+    return displayedLessons.some((l, idx) => {
+      if (idx === index || !l.time || !l.time.includes(" - ")) return false;
+      const [lStart, lEnd] = l.time.split(" - ");
+      const lStartMin = timeToMinutes(lStart);
+      const lEndMin = timeToMinutes(lEnd);
+      if (lStartMin === null || lEndMin === null) return false;
+
+      // Overlap logic: start1 < end2 AND end1 > start2
+      return startMin < lEndMin && endMin > lStartMin;
+    });
+  };
 
   useEffect(() => {
     if (displayedLessons.length > 0 && dayOffset === 0) {
@@ -207,11 +241,11 @@ export default function NextLessonCard({
     >
       <div
         className={cn(
-          "border-b border-zinc-100 dark:border-zinc-900 flex items-center justify-between bg-zinc-50/30 dark:bg-zinc-900/10 z-20 flex-shrink-0",
+          "border-b border-zinc-100 dark:border-zinc-900 flex items-center justify-between bg-zinc-50/30 dark:bg-zinc-900/10 z-20 flex-shrink-0 gap-2",
           isLandscape ? "p-2 px-4" : "px-4 py-3",
         )}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <Popover
             open={isCalendarOpen}
             onOpenChange={(open) => {
@@ -227,12 +261,12 @@ export default function NextLessonCard({
               <button
                 type="button"
                 className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all font-serif font-bold text-sm text-zinc-900 dark:text-white shadow-sm",
+                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all font-serif font-bold text-zinc-900 dark:text-white shadow-sm min-w-0",
                   isLandscape ? "text-xs" : "text-sm",
                 )}
               >
-                <span>{data?.dayName || "..."}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+                <span className="truncate">{data?.dayName || "..."}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
               </button>
             </PopoverTrigger>
             <PopoverContent
@@ -265,7 +299,7 @@ export default function NextLessonCard({
           </Popover>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           <button
             type="button"
             onClick={() => {
@@ -274,13 +308,13 @@ export default function NextLessonCard({
             }}
             className={cn(
               "p-1.5 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all",
-              dayOffset === 0 ? "opacity-0 pointer-events-none" : "opacity-100",
+              dayOffset === 0 ? "hidden" : "block",
             )}
           >
             <ArrowLeftToLine className="w-3.5 h-3.5" />
           </button>
 
-          <div className="flex bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden shadow-sm p-0.5 gap-0.5 mr-1">
+          <div className="flex bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden shadow-sm p-0.5 gap-0.5">
             <button
               type="button"
               onClick={handlePrevDay}
@@ -298,8 +332,8 @@ export default function NextLessonCard({
             </button>
           </div>
 
-          <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1" />
-          <span className="text-[10px] font-mono font-bold text-zinc-400 px-1">
+          <div className="hidden sm:block h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1" />
+          <span className="hidden sm:block text-[10px] font-mono font-bold text-zinc-400 px-1">
             {getDate(dayOffset)}
           </span>
         </div>
@@ -383,14 +417,6 @@ export default function NextLessonCard({
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      {currentLesson.isVideo && (
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500 shadow-[0_0_12px_-2px_rgba(59,130,246,0.5)] border border-blue-400/20">
-                          <Video className="w-3 h-3 text-white" />
-                          <span className="text-[10px] font-black font-mono text-white uppercase tracking-wider">
-                            Videoconferenza
-                          </span>
-                        </div>
-                      )}
                       {dayOffset === 0 &&
                         data?.nextLesson?.lesson.time ===
                           currentLesson.time && (
@@ -403,7 +429,7 @@ export default function NextLessonCard({
 
                   <h3
                     className={cn(
-                      "font-bold text-zinc-900 dark:text-white leading-tight font-serif line-clamp-3 mb-2",
+                      "font-bold text-zinc-900 dark:text-white leading-tight font-serif line-clamp-2 mb-2",
                       isLandscape ? "text-base" : "text-lg",
                     )}
                   >
@@ -412,30 +438,64 @@ export default function NextLessonCard({
 
                   <div
                     className={cn(
-                      "space-y-1 mt-auto",
-                      isLandscape ? "flex items-center gap-4 space-y-0" : "",
+                      "flex items-end justify-between mt-auto w-full",
+                      isLandscape ? "gap-4" : "",
                     )}
                   >
-                    {currentLesson.location && (
-                      <div className="flex items-center gap-2 text-xs text-zinc-500 font-medium font-mono min-w-0">
-                        {currentLesson.isVideo ? (
-                          <Video className="w-3 h-3 shrink-0 opacity-50 text-blue-500" />
-                        ) : (
-                          <MapPin className="w-3 h-3 shrink-0 opacity-50 text-zinc-400" />
-                        )}
-                        <span className="truncate">
-                          {currentLesson.location}
-                        </span>
-                      </div>
-                    )}
-                    {currentLesson.professor && (
-                      <div className="flex items-center gap-2 text-[11px] text-zinc-400 italic font-serif min-w-0">
-                        <User className="w-3 h-3 shrink-0 opacity-40" />
-                        <span className="truncate">
-                          {currentLesson.professor}
-                        </span>
-                      </div>
-                    )}
+                    <div
+                      className={cn(
+                        "space-y-1",
+                        isLandscape ? "flex items-center gap-4 space-y-0" : "",
+                      )}
+                    >
+                      {currentLesson.location && (
+                        <div className="flex items-center gap-2 text-xs text-zinc-500 font-medium font-mono min-w-0">
+                          {currentLesson.isVideo ? (
+                            <Video className="w-3 h-3 shrink-0 opacity-50 text-blue-500" />
+                          ) : (
+                            <MapPin className="w-3 h-3 shrink-0 opacity-50 text-zinc-400" />
+                          )}
+                          <span className="whitespace-normal">
+                            {currentLesson.location}
+                          </span>
+                        </div>
+                      )}
+                      {currentLesson.professor && (
+                        <div className="flex items-center gap-2 text-[11px] text-zinc-400 italic font-serif min-w-0">
+                          <User className="w-3 h-3 shrink-0 opacity-40" />
+                          <span className="whitespace-normal">
+                            {currentLesson.professor}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 ml-4">
+                      {currentLesson.isVideo && (
+                        <div className="p-1.5 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                          <Video className="w-4 h-4" strokeWidth={2.5} />
+                        </div>
+                      )}
+                      {hasOverlap(currentLesson, displayIndex) && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="p-1.5 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 animate-in zoom-in duration-300">
+                                <AlertTriangle
+                                  className="w-4 h-4"
+                                  strokeWidth={2.5}
+                                />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-zinc-900 text-white border-zinc-800 rounded-xl px-3 py-2">
+                              <p className="text-[10px] font-bold font-serif uppercase tracking-wider">
+                                Sovrapposizione oraria
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
