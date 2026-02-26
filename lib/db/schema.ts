@@ -5,6 +5,8 @@ import {
   mysqlTable,
   timestamp,
   varchar,
+  text,
+  longtext,
 } from "drizzle-orm/mysql-core";
 
 export const courses = mysqlTable("courses", {
@@ -43,14 +45,14 @@ export const pushSubscriptions = mysqlTable("push_subscriptions", {
   endpoint: varchar("endpoint", { length: 1024 }).notNull(),
   p256dh: varchar("p256dh", { length: 255 }).notNull(),
   auth: varchar("auth", { length: 255 }).notNull(),
-  filters: varchar("filters", { length: 2048 }),
+  filters: text("filters"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const courseSnapshots = mysqlTable("course_snapshots", {
   linkId: varchar("link_id", { length: 255 }).primaryKey(),
   lastHash: varchar("last_hash", { length: 255 }).notNull(),
-  lastData: varchar("last_data", { length: 10000 }),
+  lastData: longtext("last_data"),
   lastUpdated: timestamp("last_updated").notNull().defaultNow().onUpdateNow(),
 });
 
