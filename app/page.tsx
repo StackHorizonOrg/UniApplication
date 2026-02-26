@@ -18,6 +18,7 @@ import { CalendarView } from "./components/CalendarView";
 import { DayView } from "./components/DayView";
 import { MonthlyView } from "./components/MonthlyView";
 import NextLessonCard from "./components/NextLessonCard";
+import { NotificationsIntroDialog } from "./components/NotificationsIntroDialog";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { WelcomeDialog } from "./components/WelcomeDialog";
@@ -28,18 +29,22 @@ export default function Home() {
   const [selectedDay, setSelectedDay] = useState<DaySchedule | null>(null);
   const [activeView, setActiveView] = useState<"week" | "month">("week");
   const [calendarIds] = useLocalStorage<string[]>("calendarIds", []);
-  const [calendarId] = useLocalStorage<string>("calendarId", ""); // Still keep for backward compatibility during transition
+  const [calendarId] = useLocalStorage<string>("calendarId", "");
   const [courseNames] = useLocalStorage<string[]>("courseNames", []);
   const [hasSeenWelcome, setHasSeenWelcome] = useLocalStorage<boolean>(
     "hasSeenWelcomeV2",
     false,
   );
+  const [hasSeenNotifIntro, setHasSeenNotifIntro] = useLocalStorage<boolean>(
+    "hasSeenNotifIntroV1",
+    false,
+  );
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(false);
+  const [isNotifIntroOpen, setIsNotifIntroOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
 
-  // Effective IDs to use for queries
   const activeLinkIds =
     calendarIds.length > 0 ? calendarIds : calendarId ? [calendarId] : [];
 
@@ -52,21 +57,34 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (isClient && !hasSeenWelcome) {
-      setIsWelcomeOpen(true);
-      setIsSettingsOpen(false);
-    } else if (isClient && hasSeenWelcome && activeLinkIds.length === 0) {
-      setIsSettingsOpen(true);
+    if (isClient) {
+      if (!hasSeenWelcome) {
+        setIsWelcomeOpen(true);
+        setIsSettingsOpen(false);
+      } else if (!hasSeenNotifIntro) {
+        setIsNotifIntroOpen(true);
+      } else if (activeLinkIds.length === 0) {
+        setIsSettingsOpen(true);
+      }
     }
-  }, [isClient, activeLinkIds.length, hasSeenWelcome]);
+  }, [isClient, activeLinkIds.length, hasSeenWelcome, hasSeenNotifIntro]);
 
   const handleWelcomeComplete = () => {
     setHasSeenWelcome(true);
+    setHasSeenNotifIntro(true);
     setIsWelcomeOpen(false);
     if (activeLinkIds.length === 0) {
       setTimeout(() => {
         setIsSettingsOpen(true);
       }, 300);
+    }
+  };
+
+  const handleNotifIntroComplete = (openSettings = false) => {
+    setHasSeenNotifIntro(true);
+    setIsNotifIntroOpen(false);
+    if (openSettings) {
+      setTimeout(() => setIsSettingsOpen(true), 300);
     }
   };
 
@@ -307,6 +325,12 @@ export default function Home() {
       <WelcomeDialog
         isOpen={isWelcomeOpen}
         onComplete={handleWelcomeComplete}
+      />
+
+      <NotificationsIntroDialog
+        isOpen={isNotifIntroOpen}
+        onClose={() => handleNotifIntroComplete(false)}
+        onConfigure={() => handleNotifIntroComplete(true)}
       />
 
       <SettingsDialog

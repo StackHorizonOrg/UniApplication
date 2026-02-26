@@ -20,6 +20,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { api } from "@/lib/api";
 import {
   addDays,
   getCurrentItalianDateTime,
@@ -72,6 +73,9 @@ export function CalendarView({
   const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
 
+  const updateFiltersMutation =
+    api.notifications.updateAllFilters.useMutation();
+
   useEffect(() => {
     const checkSize = () => {
       const width = window.innerWidth;
@@ -105,11 +109,15 @@ export function CalendarView({
   );
 
   const toggleSubject = (materia: string) => {
-    setHiddenSubjects((prev) =>
-      prev.includes(materia)
-        ? prev.filter((s) => s !== materia)
-        : [...prev, materia],
-    );
+    const newHidden = hiddenSubjects.includes(materia)
+      ? hiddenSubjects.filter((s) => s !== materia)
+      : [...hiddenSubjects, materia];
+
+    setHiddenSubjects(newHidden);
+
+    if ("Notification" in window && Notification.permission === "granted") {
+      updateFiltersMutation.mutate({ filters: newHidden });
+    }
   };
 
   const today = getCurrentItalianDateTime();
@@ -452,7 +460,7 @@ export function CalendarView({
       <div
         className={cn(
           "flex-1 min-h-0 overflow-y-auto custom-scrollbar",
-          showTabs && activeTab !== "filters" && "hidden",
+          showTabs && activeTab !== "calendar" && "hidden",
         )}
       >
         <div className="px-5 pb-6">

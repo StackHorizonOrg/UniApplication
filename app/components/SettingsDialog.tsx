@@ -1,3 +1,5 @@
+"use client";
+
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
@@ -33,10 +35,10 @@ import type { Course } from "@/lib/courses";
 import { useLocalStorage, useUserId } from "@/lib/hooks";
 import { extractCalendarId } from "@/lib/orario-utils";
 import { cn } from "@/lib/utils";
+import { PushNotificationManager } from "./PushNotificationManager";
 
 const INITIAL_HIDDEN_SUBJECTS: string[] = [];
 
-// Helper components defined outside to prevent re-creation on re-renders
 const panelVariants = {
   hidden: (direction: number) => ({
     opacity: 0,
@@ -172,20 +174,22 @@ const CoursePanel = ({
               const isSelected = selectedCourseIds.includes(course.id);
               return (
                 <div key={course.id} className="relative group">
-                  <button
-                    type="button"
+                  <div
                     className={cn(
-                      "w-full flex flex-col gap-2 p-3 pr-12 rounded-xl border transition-all text-left relative overflow-hidden",
+                      "w-full flex flex-col gap-2 p-3 pr-12 rounded-xl border transition-all relative overflow-hidden",
                       isSelected
                         ? "bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white shadow-md"
                         : "bg-white dark:bg-black border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-900/50",
                     )}
-                    onClick={() => {
-                      toggleCourseSelection(course);
-                      setError(null);
-                    }}
                   >
-                    <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      className="w-full flex items-center gap-2.5 cursor-pointer select-none outline-none text-left"
+                      onClick={() => {
+                        toggleCourseSelection(course);
+                        setError(null);
+                      }}
+                    >
                       <div
                         className={cn(
                           "w-5 h-5 rounded-md border-2 transition-colors shrink-0 flex items-center justify-center",
@@ -215,35 +219,31 @@ const CoursePanel = ({
                       >
                         {course.name}
                       </span>
-                    </div>
+                    </button>
 
-                    <div className="flex items-center gap-2 ml-[28px]">
-                      {course.year && (
-                        <span
-                          className={cn(
-                            "text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tight border font-mono",
-                            isSelected
-                              ? "bg-white/10 border-white/20 text-white dark:text-black"
-                              : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400",
-                          )}
-                        >
-                          {course.year}° Anno
-                        </span>
-                      )}
-                      {course.academicYear && (
-                        <span
-                          className={cn(
-                            "text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tight border font-mono",
-                            isSelected
-                              ? "bg-white/10 border-white/20 text-white dark:text-black"
-                              : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400",
-                          )}
-                        >
-                          {course.academicYear}
-                        </span>
+                    <div className="flex items-center justify-between ml-[28px]">
+                      <div className="flex items-center gap-2">
+                        {course.year && (
+                          <span
+                            className={cn(
+                              "text-[8px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-tight border font-mono",
+                              isSelected
+                                ? "bg-white/10 border-white/20 text-white dark:text-black"
+                                : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400",
+                            )}
+                          >
+                            {course.year}° Anno
+                          </span>
+                        )}
+                      </div>
+
+                      {isSelected && (
+                        <div className="relative z-20">
+                          <PushNotificationManager linkId={course.linkId} />
+                        </div>
                       )}
                     </div>
-                  </button>
+                  </div>
 
                   <button
                     type="button"
@@ -512,7 +512,6 @@ export function SettingsDialog({
   forceOpen = false,
 }: SettingsDialogProps) {
   const router = useRouter();
-  // Multiple courses support
   const [calendarIds, setCalendarIds] = useLocalStorage<string[]>(
     "calendarIds",
     [],
@@ -523,7 +522,6 @@ export function SettingsDialog({
   );
   const [courseIds, setCourseIds] = useLocalStorage<string[]>("courseIds", []);
 
-  // Backward compatibility
   const [calendarId, setCalendarId] = useLocalStorage<string>("calendarId", "");
   const [courseName, setCourseName] = useLocalStorage<string>("courseName", "");
   const [storedCourseId, setStoredCourseId] = useLocalStorage<string>(
@@ -557,7 +555,7 @@ export function SettingsDialog({
 
   const userId = useUserId();
 
-  const { data: courses = [], refetch: refetchCourses } =
+  const { data: allCourses = [], refetch: refetchCourses } =
     api.courses.getAll.useQuery({ userId });
   const addCourseMutation = api.courses.add.useMutation({
     onSuccess: () => {
@@ -569,10 +567,11 @@ export function SettingsDialog({
     },
   });
 
-  // Migration and Initialization
+  const updateFiltersMutation =
+    api.notifications.updateAllFilters.useMutation();
+
   useEffect(() => {
     if (isOpen && !isInitialized) {
-      // Migrate single values to arrays if arrays are empty but single values exist
       if (calendarIds.length === 0 && calendarId) {
         setCalendarIds([calendarId]);
         setCourseNames([courseName]);
@@ -604,21 +603,21 @@ export function SettingsDialog({
   ]);
 
   useEffect(() => {
-    if (isOpen && courses.length > 0 && selectedCourses.length === 0) {
+    if (isOpen && allCourses.length > 0 && selectedCourses.length === 0) {
       const activeIds =
         courseIds.length > 0
           ? courseIds
           : storedCourseId
             ? [storedCourseId]
             : [];
-      const matchedCourses = courses.filter((c) => activeIds.includes(c.id));
+      const matchedCourses = allCourses.filter((c) => activeIds.includes(c.id));
 
       if (matchedCourses.length > 0) {
         setSelectedCourses(matchedCourses);
         setActiveTab("select");
       }
     }
-  }, [isOpen, courses, selectedCourses.length, courseIds, storedCourseId]);
+  }, [isOpen, allCourses, selectedCourses.length, courseIds, storedCourseId]);
 
   const { data: availableSubjects, isLoading } =
     api.orario.getSubjects.useQuery(
@@ -671,7 +670,7 @@ export function SettingsDialog({
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     } catch (err) {
-      console.error("Errore durante la copia:", err);
+      console.error(err);
     }
   };
 
@@ -686,7 +685,7 @@ export function SettingsDialog({
       setCopiedCourseId(courseId);
       setTimeout(() => setCopiedCourseId(null), 2000);
     } catch (err) {
-      console.error("Errore durante la copia:", err);
+      console.error(err);
     }
   };
 
@@ -723,7 +722,6 @@ export function SettingsDialog({
         setCourseNames(newNames);
         setCourseIds(newCourseIds);
 
-        // Clear single storage for new users or migrated ones
         setCalendarId("");
         setCourseName("");
         setStoredCourseId("");
@@ -735,7 +733,7 @@ export function SettingsDialog({
         }
         onClose();
       } catch (error) {
-        console.error("Errore durante l'aggiunta del corso:", error);
+        console.error(error);
       }
     } else {
       if (selectedCourses.length === 0) {
@@ -751,7 +749,6 @@ export function SettingsDialog({
       setCourseNames(newNames);
       setCourseIds(newCourseIds);
 
-      // Clear legacy
       setCalendarId("");
       setCourseName("");
       setStoredCourseId("");
@@ -761,11 +758,15 @@ export function SettingsDialog({
   };
 
   const toggleSubject = (subject: string) => {
-    setHiddenSubjects((prev) =>
-      prev.includes(subject)
-        ? prev.filter((s) => s !== subject)
-        : [...prev, subject],
-    );
+    const newHidden = hiddenSubjects.includes(subject)
+      ? hiddenSubjects.filter((s) => s !== subject)
+      : [...hiddenSubjects, subject];
+
+    setHiddenSubjects(newHidden);
+
+    if ("Notification" in window && Notification.permission === "granted") {
+      updateFiltersMutation.mutate({ filters: newHidden });
+    }
   };
 
   if (!isOpen && !forceOpen) return null;
@@ -828,7 +829,7 @@ export function SettingsDialog({
                 setActiveTab={setActiveTab}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
-                courses={courses}
+                courses={allCourses}
                 selectedCourseIds={selectedCourses.map((c) => c.id)}
                 toggleCourseSelection={toggleCourseSelection}
                 setError={setError}

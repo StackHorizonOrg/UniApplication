@@ -3,6 +3,7 @@ import { Geist, Noto_Serif } from "next/font/google";
 import "@/app/globals.css";
 import Script from "next/script";
 import type React from "react";
+import { ServiceWorkerRegistration } from "@/app/components/ServiceWorkerRegistration";
 import { TRPCProvider } from "@/lib/providers";
 
 const geistSans = Geist({
@@ -53,7 +54,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${notoSerif.variable} font-sans antialiased bg-white dark:bg-black`}
       >
-        <TRPCProvider>{children}</TRPCProvider>
+        <TRPCProvider>
+          <ServiceWorkerRegistration />
+          {children}
+        </TRPCProvider>
         {process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID && (
           <Script
             src="https://cloud.umami.is/script.js"

@@ -26,6 +26,7 @@ COPY components ./components
 COPY lib ./lib
 COPY server ./server
 COPY data ./data
+COPY drizzle ./drizzle
 
 # Copia il file .env.local per le variabili d'ambiente
 COPY .env.local .env.local
@@ -33,12 +34,11 @@ COPY .env.local .env.local
 # Build dell'applicazione
 RUN pnpm run build
 
-# Rimuovi le dipendenze di sviluppo
-RUN pnpm prune --prod
-
 EXPOSE 3001
 ENV PORT=3001
-CMD ["pnpm", "start"]
+
+# Avvia migrazioni (push), poi app e worker usando tsx locale
+CMD ["sh", "-c", "npx drizzle-kit push && pnpm start & npx tsx server/jobs/check-updates.ts --cron"]
 
 
 # docker build -t uniapplication .

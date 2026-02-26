@@ -115,7 +115,6 @@ const processEvents = (
 
     let matchesLocation = locationFilter === "Tutte" || isVideoConference;
 
-    // Filtriamo le aule in base alla sede scelta dall'utente (es: solo Varese)
     const filteredAule = (e.aule || []).filter((aula) => {
       if (locationFilter === "Tutte") return true;
       const name = aula.descrizione;
@@ -133,29 +132,24 @@ const processEvents = (
     });
 
     if (locationFilter !== "Tutte" && !matchesLocation) {
-      // Se non è videoconferenza e non ha aule nella sede scelta, scarta
       matchesLocation = filteredAule.length > 0;
     }
 
     if (!matchesLocation) continue;
 
-    // Costruiamo la stringa delle posizioni mostrando SOLO le aule della sede scelta (Varese)
     const location =
       filteredAule
         .map((aula) => {
           const name = aula.descrizione;
           const city = aula.edificio?.comune || "Unknown";
 
-          let pad = "";
+          let _pad = "";
           const padMatch = name.match(/Padiglione\s+([^-]+)/i);
-          if (padMatch) pad = `Pad. ${padMatch[1].trim()}`;
+          if (padMatch) _pad = `Pad. ${padMatch[1].trim()}`;
           else if (name.includes("Morselli") || /\bPM\b/i.test(name))
-            pad = "Pad. Morselli";
+            _pad = "Pad. Morselli";
           else if (name.includes("Monte Generoso") || /\bMTG\b/i.test(name))
-            pad = "Pad. Monte Generoso";
-
-          const _normalizedName = name.toLowerCase();
-          const _normalizedPad = pad.toLowerCase().replace("pad.", "").trim();
+            _pad = "Pad. Monte Generoso";
 
           return `${name} (${city})`;
         })
@@ -404,7 +398,6 @@ export const orarioRouter = createTRPCRouter({
         })
         .filter((e): e is NonNullable<typeof e> => e !== null);
 
-      // Remove duplicates after merging
       return processed.filter(
         (val, index, self) =>
           index ===

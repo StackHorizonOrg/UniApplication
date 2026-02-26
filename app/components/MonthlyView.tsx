@@ -45,7 +45,7 @@ export function MonthlyView({
     DateTime.now().setLocale("it"),
   );
   const [calendarIds] = useLocalStorage<string[]>("calendarIds", []);
-  const [calendarId] = useLocalStorage<string>("calendarId", ""); // Backward compat
+  const [calendarId] = useLocalStorage<string>("calendarId", "");
   const [hiddenSubjects, setHiddenSubjects] = useLocalStorage<string[]>(
     "hiddenSubjects",
     [],
@@ -65,6 +65,9 @@ export function MonthlyView({
     "calendar",
   );
   const [isViewMenuOpen, setIsViewMenuOpen] = useState(false);
+
+  const updateFiltersMutation =
+    api.notifications.updateAllFilters.useMutation();
 
   useEffect(() => {
     const check = () => {
@@ -102,11 +105,15 @@ export function MonthlyView({
   }, [monthlyEvents]);
 
   const toggleSubject = (materia: string) => {
-    setHiddenSubjects((prev) =>
-      prev.includes(materia)
-        ? prev.filter((s) => s !== materia)
-        : [...prev, materia],
-    );
+    const newHidden = hiddenSubjects.includes(materia)
+      ? hiddenSubjects.filter((s) => s !== materia)
+      : [...hiddenSubjects, materia];
+
+    setHiddenSubjects(newHidden);
+
+    if ("Notification" in window && Notification.permission === "granted") {
+      updateFiltersMutation.mutate({ filters: newHidden });
+    }
   };
 
   const selectedDayEvents = useMemo(() => {

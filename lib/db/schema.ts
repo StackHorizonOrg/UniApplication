@@ -36,7 +36,27 @@ export const apiLogs = mysqlTable("api_logs", {
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
+export const pushSubscriptions = mysqlTable("push_subscriptions", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  linkId: varchar("link_id", { length: 255 }).notNull(),
+  endpoint: varchar("endpoint", { length: 1024 }).notNull(),
+  p256dh: varchar("p256dh", { length: 255 }).notNull(),
+  auth: varchar("auth", { length: 255 }).notNull(),
+  filters: varchar("filters", { length: 2048 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const courseSnapshots = mysqlTable("course_snapshots", {
+  linkId: varchar("link_id", { length: 255 }).primaryKey(),
+  lastHash: varchar("last_hash", { length: 255 }).notNull(),
+  lastData: varchar("last_data", { length: 10000 }),
+  lastUpdated: timestamp("last_updated").notNull().defaultNow().onUpdateNow(),
+});
+
 export type DbCourse = typeof courses.$inferSelect;
 export type NewDbCourse = typeof courses.$inferInsert;
 export type AnalyticsUser = typeof analyticsUsers.$inferSelect;
 export type ApiLog = typeof apiLogs.$inferSelect;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type CourseSnapshot = typeof courseSnapshots.$inferSelect;
