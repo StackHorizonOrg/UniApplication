@@ -37,8 +37,8 @@ RUN pnpm run build
 EXPOSE 3001
 ENV PORT=3001
 
-# Avvia migrazioni (push), poi app e worker usando tsx locale
-CMD ["sh", "-c", "npx drizzle-kit push --config drizzle.config.ts --force && pnpm start & npx tsx server/jobs/check-updates.ts --cron"]
+# Avvia l'app e il worker in parallelo
+CMD ["sh", "-c", "pnpm start & npx tsx server/jobs/check-updates.ts --cron"]
 
 
 # docker build -t uniapplication .
