@@ -13,7 +13,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Copia TUTTI i file di configurazione necessari
-COPY next.config.ts tsconfig.json ./
+COPY next.config.ts tsconfig.json drizzle.config.ts ./
 COPY tailwind.config.ts postcss.config.mjs ./
 COPY components.json biome.json ./
 
