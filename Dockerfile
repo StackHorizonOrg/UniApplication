@@ -27,6 +27,7 @@ COPY lib ./lib
 COPY server ./server
 COPY data ./data
 COPY drizzle ./drizzle
+COPY public ./public
 
 # Copia il file .env.local per le variabili d'ambiente
 COPY .env.local .env.local
