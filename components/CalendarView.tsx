@@ -105,6 +105,23 @@ export function CalendarView({
     else if (info.offset.x > threshold) handlePrevWeek();
   };
 
+  const handleCalendarDragEnd = (_: unknown, info: PanInfo) => {
+    const threshold = 50;
+    if (info.offset.x < -threshold) {
+      setCalendarMonth((prev) => {
+        const d = new Date(prev);
+        d.setMonth(d.getMonth() + 1);
+        return d;
+      });
+    } else if (info.offset.x > threshold) {
+      setCalendarMonth((prev) => {
+        const d = new Date(prev);
+        d.setMonth(d.getMonth() - 1);
+        return d;
+      });
+    }
+  };
+
   const allMaterie = useMemo(
     () => schedule.flatMap((day) => day.events.map((ev) => ev.materia)),
     [schedule],
@@ -204,66 +221,63 @@ export function CalendarView({
               </div>
 
               <div className="text-center flex flex-col items-center flex-1 min-w-0 mx-1 relative min-h-[40px] justify-center">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={weekOffset}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex flex-col items-center w-full min-w-0"
-                  >
-                    <Popover
-                      open={isCalendarOpen}
-                      onOpenChange={(open) => {
-                        setIsCalendarOpen(open);
-                        if (open) setCalendarMonth(baseDate.toJSDate());
-                      }}
+                <Popover
+                  open={isCalendarOpen}
+                  onOpenChange={(open) => {
+                    setIsCalendarOpen(open);
+                    if (open) setCalendarMonth(baseDate.toJSDate());
+                  }}
+                >
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all font-serif font-bold text-zinc-900 dark:text-white shadow-sm min-w-0 w-full text-xs sm:text-sm"
                     >
-                      <PopoverTrigger asChild>
-                        <button
-                          type="button"
-                          className="flex items-center justify-center gap-1 px-2 sm:px-3 py-1 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all font-serif font-bold text-xs sm:text-sm min-w-0 w-full"
-                        >
-                          <span className="truncate">{weekRangeDisplay}</span>
-                          <ChevronDown className="w-3 h-3 sm:w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        className="w-auto p-0 bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl"
-                        align="center"
-                      >
-                        <Calendar
-                          mode="single"
-                          month={calendarMonth}
-                          onMonthChange={setCalendarMonth}
-                          selected={baseDate.toJSDate()}
-                          onSelect={(d) => {
-                            if (d) {
-                              const diff = Math.floor(
-                                DateTime.fromJSDate(d)
-                                  .minus({
-                                    days: getDayOfWeek(DateTime.fromJSDate(d)),
-                                  })
-                                  .diff(
-                                    today.minus({
-                                      days: getDayOfWeek(today),
-                                    }),
-                                    "days",
-                                  ).days,
-                              );
-                              setDirection(diff > weekOffset ? 1 : -1);
-                              onSetOffset(diff);
-                              setIsCalendarOpen(false);
-                            }
-                          }}
-                          locale={it}
-                          className="font-mono"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </motion.div>
-                </AnimatePresence>
+                      <span className="truncate">{weekRangeDisplay}</span>
+                      <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-auto p-0 bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-3xl shadow-2xl overflow-hidden"
+                    align="center"
+                  >
+                    <motion.div
+                      drag="x"
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={0.2}
+                      onDragEnd={handleCalendarDragEnd}
+                      className="touch-none"
+                    >
+                      <Calendar
+                        mode="single"
+                        month={calendarMonth}
+                        onMonthChange={setCalendarMonth}
+                        selected={baseDate.toJSDate()}
+                        onSelect={(d) => {
+                          if (d) {
+                            const diff = Math.floor(
+                              DateTime.fromJSDate(d)
+                                .minus({
+                                  days: getDayOfWeek(DateTime.fromJSDate(d)),
+                                })
+                                .diff(
+                                  today.minus({
+                                    days: getDayOfWeek(today),
+                                  }),
+                                  "days",
+                                ).days,
+                            );
+                            setDirection(diff > weekOffset ? 1 : -1);
+                            onSetOffset(diff);
+                            setIsCalendarOpen(false);
+                          }
+                        }}
+                        locale={it}
+                        className="font-mono"
+                      />
+                    </motion.div>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
