@@ -34,6 +34,7 @@ COPY --from=builder /app/public ./public
 # Copy production node_modules for the cron job (standalone has pruned ones)
 COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json
 
 # Copy job-related files
 COPY --from=builder --chown=nextjs:nodejs /app/server/jobs ./server/jobs
