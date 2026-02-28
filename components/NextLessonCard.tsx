@@ -33,6 +33,13 @@ import { useLocalStorage } from "@/lib/hooks";
 import type { DaySchedule } from "@/lib/orario-utils";
 import { cn } from "@/lib/utils";
 
+const SPRING_CONFIG = {
+  type: "spring",
+  stiffness: 350,
+  damping: 35,
+  mass: 1,
+} as const;
+
 export default function NextLessonCard({
   schedule: _schedule,
 }: {
@@ -202,22 +209,19 @@ export default function NextLessonCard({
 
   const variants = {
     enter: (d: number) => ({
-      x: d > 0 ? "20%" : "-20%",
+      x: d > 0 ? 40 : -40,
       opacity: 0,
-      scale: 0.95,
-      filter: "blur(4px)",
+      scale: 0.98,
     }),
     center: {
       x: 0,
       opacity: 1,
       scale: 1,
-      filter: "blur(0px)",
     },
     exit: (d: number) => ({
-      x: d < 0 ? "20%" : "-20%",
+      x: d < 0 ? 40 : -40,
       opacity: 0,
-      scale: 0.95,
-      filter: "blur(4px)",
+      scale: 0.98,
     }),
   };
 
@@ -348,27 +352,22 @@ export default function NextLessonCard({
           {isFetching && !data ? (
             <motion.div
               key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               className="absolute inset-0 flex items-center justify-center"
             >
               <div className="w-5 h-5 border-2 border-zinc-200 dark:border-zinc-800 border-t-zinc-900 dark:border-t-white rounded-full animate-spin" />
             </motion.div>
           ) : (
             <motion.div
-              key={
-                displayedLessons.length === 0
-                  ? `empty-${dayOffset}`
-                  : `${dayOffset}-${displayIndex}`
-              }
+              key={`${dayOffset}-${displayIndex}-${displayedLessons.length > 0}`}
               custom={direction}
               variants={variants}
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{
-                x: { type: "spring", stiffness: 400, damping: 30 },
-                opacity: { duration: 0.2 },
-                scale: { duration: 0.2 },
-              }}
+              transition={SPRING_CONFIG}
               className="flex flex-col items-center justify-center flex-1 w-full"
             >
               {displayedLessons.length === 0 ? (

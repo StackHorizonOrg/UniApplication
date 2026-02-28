@@ -32,6 +32,13 @@ import type { DaySchedule } from "@/lib/orario-utils";
 import { parseEventTitle } from "@/lib/orario-utils";
 import { cn } from "@/lib/utils";
 
+const SPRING_CONFIG = {
+  type: "spring",
+  stiffness: 350,
+  damping: 35,
+  mass: 1,
+} as const;
+
 interface MonthlyViewProps {
   onDaySelect: (day: DaySchedule) => void;
   materiaColorMap: Record<string, string>;
@@ -188,22 +195,19 @@ export function MonthlyView({
 
   const variants = {
     enter: (d: number) => ({
-      x: d > 0 ? "50%" : "-50%",
+      x: d > 0 ? 40 : -40,
       opacity: 0,
       scale: 0.98,
-      filter: "blur(10px)",
     }),
     center: {
       x: 0,
       opacity: 1,
       scale: 1,
-      filter: "blur(0px)",
     },
     exit: (d: number) => ({
-      x: d < 0 ? "50%" : "-50%",
+      x: d < 0 ? 40 : -40,
       opacity: 0,
       scale: 0.98,
-      filter: "blur(10px)",
     }),
   };
 
@@ -280,7 +284,7 @@ export function MonthlyView({
               "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
               activeTab === "calendar"
                 ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white"
-                : "text-zinc-400 hover:text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                : "text-zinc-400 hover:text-zinc-50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
             )}
           >
             <CalendarDays className="w-4 h-4" />
@@ -296,7 +300,7 @@ export function MonthlyView({
               "flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
               activeTab === "filters"
                 ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white"
-                : "text-zinc-400 hover:text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
+                : "text-zinc-400 hover:text-zinc-50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50",
             )}
           >
             <Filter className="w-4 h-4" />
@@ -312,7 +316,7 @@ export function MonthlyView({
       <motion.div
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
+        transition={SPRING_CONFIG}
         className="w-full h-full flex bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-sm relative"
       >
         <div className="w-[35%] min-w-[280px] max-w-[350px] border-r border-zinc-100 dark:border-zinc-900 flex flex-col bg-zinc-50/10 dark:bg-zinc-900/10">
@@ -336,10 +340,7 @@ export function MonthlyView({
                 initial="enter"
                 animate="center"
                 exit="exit"
-                transition={{
-                  x: { type: "spring", stiffness: 300, damping: 30 },
-                  opacity: { duration: 0.3 },
-                }}
+                transition={SPRING_CONFIG}
                 drag="x"
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.4}
@@ -556,7 +557,7 @@ export function MonthlyView({
                             "flex items-center gap-3 p-4 rounded-2xl border transition-all text-left",
                             isHidden
                               ? "bg-zinc-50 dark:bg-zinc-900/20 border-transparent opacity-40"
-                              : "bg-white dark:bg-zinc-900/10 border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700",
+                              : "bg-white dark:bg-zinc-900/10 border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 active:scale-[0.98]",
                           )}
                         >
                           <div
@@ -585,7 +586,7 @@ export function MonthlyView({
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      transition={SPRING_CONFIG}
       className="w-full h-full flex flex-col bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-sm relative"
     >
       <div className="px-6 py-4 lg:px-8 lg:py-6 border-b border-zinc-100 dark:border-zinc-900 flex items-center justify-between bg-zinc-50/20 dark:bg-zinc-900/10 z-10">
@@ -629,13 +630,12 @@ export function MonthlyView({
         <div className="w-full max-w-4xl mx-auto flex flex-col h-full gap-4 lg:gap-8">
           {(!showTabs || activeTab === "calendar") && (
             <AnimatePresence mode="wait" custom={direction}>
-              {isFetching ? (
+              {isFetching && monthlyEvents.length === 0 ? (
                 <motion.div
                   key="loading"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   className="flex-1 flex flex-col items-center justify-center min-h-[300px]"
                 >
                   <div className="w-12 h-12 border-4 border-zinc-200 dark:border-zinc-800 border-t-zinc-900 dark:border-t-white rounded-full animate-spin" />
@@ -651,11 +651,7 @@ export function MonthlyView({
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  transition={{
-                    x: { type: "spring", stiffness: 300, damping: 30 },
-                    opacity: { duration: 0.3 },
-                    scale: { duration: 0.3 },
-                  }}
+                  transition={SPRING_CONFIG}
                   drag="x"
                   dragConstraints={{ left: 0, right: 0 }}
                   dragElastic={0.4}
@@ -783,7 +779,7 @@ export function MonthlyView({
                           "flex items-center gap-3 p-4 rounded-2xl border transition-all text-left",
                           isHidden
                             ? "bg-zinc-50 dark:bg-zinc-900/20 border-transparent opacity-40"
-                            : "bg-white dark:bg-zinc-900/10 border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700",
+                            : "bg-white dark:bg-zinc-900/10 border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 active:scale-[0.98]",
                         )}
                       >
                         <div

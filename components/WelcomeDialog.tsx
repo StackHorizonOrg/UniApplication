@@ -13,6 +13,13 @@ import {
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
+const SPRING_CONFIG = {
+  type: "spring",
+  stiffness: 350,
+  damping: 35,
+  mass: 1,
+} as const;
+
 interface WelcomeDialogProps {
   isOpen: boolean;
   onComplete: () => void;
@@ -101,8 +108,9 @@ export function WelcomeDialog({ isOpen, onComplete }: WelcomeDialogProps) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={SPRING_CONFIG}
         className="w-full max-w-sm bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col"
       >
         <div className="relative flex-1 px-8 pt-12 pb-8 flex flex-col items-center text-center">
@@ -112,7 +120,7 @@ export function WelcomeDialog({ isOpen, onComplete }: WelcomeDialogProps) {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
               className="flex flex-col items-center space-y-6"
             >
               <div

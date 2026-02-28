@@ -3,6 +3,13 @@
 import { motion } from "framer-motion";
 import { BellRing, ChevronRight, Sparkles, X } from "lucide-react";
 
+const SPRING_CONFIG = {
+  type: "spring",
+  stiffness: 350,
+  damping: 35,
+  mass: 1,
+} as const;
+
 interface NotificationsIntroDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -19,8 +26,9 @@ export function NotificationsIntroDialog({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={SPRING_CONFIG}
         className="w-full max-w-sm bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col"
       >
         <div className="relative px-8 pt-10 pb-6 flex flex-col items-center text-center">

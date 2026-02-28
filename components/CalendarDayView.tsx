@@ -23,14 +23,15 @@ import type { DaySchedule, ParsedEvent } from "@/lib/orario-utils";
 import { getDayName } from "@/lib/orario-utils";
 import { cn } from "@/lib/utils";
 
-interface CalendarDayViewProps {
-  day: DaySchedule;
-  onClose?: () => void;
-}
-
 const START_HOUR = 8;
 const END_HOUR = 20;
 const HALF_HOUR_HEIGHT = 44;
+const SPRING_CONFIG = {
+  type: "spring",
+  stiffness: 350,
+  damping: 35,
+  mass: 1,
+} as const;
 
 const timeToMinutes = (time: string) => {
   const [hours, minutes] = time.split(":").map(Number);
@@ -179,7 +180,7 @@ function EventCarousel({
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            transition={SPRING_CONFIG}
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             onDragEnd={handleDragEnd}
@@ -228,6 +229,11 @@ function EventCarousel({
   );
 }
 
+interface CalendarDayViewProps {
+  day: DaySchedule;
+  onClose?: () => void;
+}
+
 export function CalendarDayView({ day, onClose }: CalendarDayViewProps) {
   const getMateriaColor = (materia: string) => {
     const normalizedMateria = materia
@@ -249,11 +255,11 @@ export function CalendarDayView({ day, onClose }: CalendarDayViewProps) {
   const processedEvents = useMemo(() => {
     const timelineEvents: TimelineEvent[] = (day.events || [])
       .filter(
-        (ev) =>
+        (ev: ParsedEvent) =>
           !ev.time.toUpperCase().includes("ANNULLATO") &&
           ev.time.includes(" - "),
       )
-      .map((ev) => {
+      .map((ev: ParsedEvent) => {
         const [start, end] = ev.time.split(" - ");
         return {
           ...ev,
@@ -262,7 +268,7 @@ export function CalendarDayView({ day, onClose }: CalendarDayViewProps) {
         };
       })
       .sort(
-        (a, b) =>
+        (a: TimelineEvent, b: TimelineEvent) =>
           a.startMin - b.startMin ||
           b.endMin - b.startMin - (a.endMin - a.startMin),
       );
@@ -343,7 +349,7 @@ export function CalendarDayView({ day, onClose }: CalendarDayViewProps) {
     return {
       groups,
       other: (day.events || []).filter(
-        (ev) =>
+        (ev: ParsedEvent) =>
           !ev.time.includes(" - ") &&
           !ev.time.toUpperCase().includes("ANNULLATO"),
       ),
@@ -396,7 +402,7 @@ export function CalendarDayView({ day, onClose }: CalendarDayViewProps) {
               </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {processedEvents.other.map((event) => (
+              {processedEvents.other.map((event: ParsedEvent) => (
                 <div
                   key={`${event.materia}-${event.time}`}
                   className="p-5 rounded-[1.5rem] border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-black shadow-sm"

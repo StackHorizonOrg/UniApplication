@@ -37,17 +37,25 @@ import { useLocalStorage, useUserId } from "@/lib/hooks";
 import { extractCalendarId } from "@/lib/orario-utils";
 import { cn } from "@/lib/utils";
 
+const SPRING_CONFIG = {
+  type: "spring",
+  stiffness: 350,
+  damping: 35,
+  mass: 1,
+} as const;
 const INITIAL_HIDDEN_SUBJECTS: string[] = [];
 
 const panelVariants = {
   hidden: (direction: number) => ({
     opacity: 0,
-    x: direction > 0 ? 100 : -100,
+    x: direction > 0 ? 40 : -40,
+    scale: 0.98,
   }),
-  visible: { opacity: 1, x: 0 },
+  visible: { opacity: 1, x: 0, scale: 1 },
   exit: (direction: number) => ({
     opacity: 0,
-    x: direction < 0 ? 100 : -100,
+    x: direction < 0 ? 40 : -40,
+    scale: 0.98,
   }),
 };
 
@@ -109,7 +117,7 @@ const CoursePanel = ({
     animate="visible"
     exit="exit"
     variants={panelVariants}
-    transition={{ duration: 0.2, ease: "easeInOut" }}
+    transition={SPRING_CONFIG}
     className="flex flex-col h-full"
   >
     <div className="px-4 pt-4 pb-3 border-b border-zinc-100 dark:border-zinc-900 bg-white dark:bg-black sticky top-0 z-10">
@@ -427,7 +435,7 @@ const SubjectsPanel = ({
     animate="visible"
     exit="exit"
     variants={panelVariants}
-    transition={{ duration: 0.2, ease: "easeInOut" }}
+    transition={SPRING_CONFIG}
     className="flex flex-col h-full"
   >
     <div className="p-4 border-b border-zinc-100 dark:border-zinc-900 sticky top-0 bg-white dark:bg-black z-10">
@@ -469,7 +477,7 @@ const SubjectsPanel = ({
                   "flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
                   isHidden
                     ? "bg-zinc-50 dark:bg-zinc-900/20 border-zinc-100 dark:border-zinc-900 text-zinc-400"
-                    : "bg-white dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white hover:border-zinc-300 dark:hover:border-zinc-700",
+                    : "bg-white dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white hover:border-zinc-300 dark:hover:border-zinc-700 active:scale-[0.98]",
                 )}
               >
                 <div

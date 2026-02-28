@@ -35,6 +35,13 @@ import { cn } from "@/lib/utils";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+const SPRING_CONFIG = {
+  type: "spring",
+  stiffness: 350,
+  damping: 35,
+  mass: 1,
+} as const;
+
 interface CalendarViewProps {
   schedule: DaySchedule[];
   weekOffset: number;
@@ -177,9 +184,9 @@ export function CalendarView({
   const weekDayHeaders = ["L", "M", "M", "G", "V", "S", "D"];
 
   const variants = {
-    enter: (d: number) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (d: number) => ({ x: d < 0 ? "100%" : "-100%", opacity: 0 }),
+    enter: (d: number) => ({ x: d > 0 ? 40 : -40, opacity: 0, scale: 0.98 }),
+    center: { x: 0, opacity: 1, scale: 1 },
+    exit: (d: number) => ({ x: d < 0 ? 40 : -40, opacity: 0, scale: 0.98 }),
   };
 
   return (
@@ -231,7 +238,7 @@ export function CalendarView({
                   <PopoverTrigger asChild>
                     <button
                       type="button"
-                      className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all font-serif font-bold text-zinc-900 dark:text-white shadow-sm min-w-0 w-full text-xs sm:text-sm"
+                      className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all font-serif font-bold text-zinc-900 dark:text-white shadow-sm min-w-0 w-full text-xs sm:text-sm active:scale-95"
                     >
                       <span className="truncate">{weekRangeDisplay}</span>
                       <ChevronDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
@@ -372,7 +379,7 @@ export function CalendarView({
                     initial="enter"
                     animate="center"
                     exit="exit"
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    transition={SPRING_CONFIG}
                     className="grid grid-cols-7 gap-2 absolute inset-0 p-1"
                   >
                     {weekDays.map((dayData) => {
