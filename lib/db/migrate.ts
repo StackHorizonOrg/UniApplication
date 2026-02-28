@@ -1,4 +1,4 @@
-import fs from "node:fs";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { db } from "@/lib/db";
 import { courses } from "@/lib/db/schema";
@@ -11,7 +11,7 @@ interface JsonCourse {
   linkId: string;
   year?: number | null;
   academicYear?: string | null;
-  status: string;
+  status: "pending" | "approved" | "rejected";
   verified: boolean;
   addedBy: string;
   userId?: string | null;
@@ -19,34 +19,17 @@ interface JsonCourse {
 }
 
 export async function migrateJsonToDb() {
-  if (!fs.existsSync(COURSES_FILE_PATH)) {
-    console.log("No JSON file to migrate.");
-    return;
-  }
-
   try {
-    const fileContent = fs.readFileSync(COURSES_FILE_PATH, "utf-8");
-    const data = JSON.parse(fileContent);
-    const jsonCourses = data.courses as JsonCourse[];
+    const fileContent = await fs.readFile(COURSES_FILE_PATH, "utf-8");
+    const { courses: jsonCourses } = JSON.parse(fileContent) as {
+      courses: JsonCourse[];
+    };
 
-    if (jsonCourses.length === 0) {
-      console.log("JSON file is empty.");
-      return;
-    }
-
-    console.log(`Migrating ${jsonCourses.length} courses...`);
+    if (!jsonCourses?.length) return;
 
     for (const course of jsonCourses) {
       const values = {
-        id: course.id,
-        name: course.name,
-        linkId: course.linkId,
-        year: course.year,
-        academicYear: course.academicYear,
-        status: course.status as "pending" | "approved" | "rejected",
-        verified: course.verified,
-        addedBy: course.addedBy,
-        userId: course.userId,
+        ...course,
         createdAt: new Date(course.createdAt),
       };
 
@@ -54,8 +37,6 @@ export async function migrateJsonToDb() {
         set: values,
       });
     }
-
-    console.log("Migration completed.");
   } catch (error) {
     console.error("Migration failed:", error);
   }

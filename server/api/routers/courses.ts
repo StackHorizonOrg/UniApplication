@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
   addCourse,
@@ -10,7 +11,11 @@ import {
   verifyCourse,
 } from "@/lib/courses";
 import { migrateJsonToDb } from "@/lib/db/migrate";
-import { adminProcedure, createTRPCRouter, publicProcedure } from "../trpc";
+import {
+  adminProcedure,
+  createTRPCRouter,
+  publicProcedure,
+} from "@/server/api/trpc";
 
 export const coursesRouter = createTRPCRouter({
   migrate: adminProcedure.mutation(async () => {
@@ -56,14 +61,9 @@ export const coursesRouter = createTRPCRouter({
       const verified = isAdmin && input.addedBy === "admin";
 
       return await addCourse({
-        name: input.name,
-        linkId: input.linkId,
-        year: input.year,
-        academicYear: input.academicYear,
+        ...input,
         status,
         verified,
-        addedBy: input.addedBy,
-        userId: input.userId,
       });
     }),
 
@@ -74,11 +74,13 @@ export const coursesRouter = createTRPCRouter({
         const success = await approveCourse(input.courseId);
         return { success };
       } catch (error) {
-        throw new Error(
-          error instanceof Error
-            ? error.message
-            : "Errore durante l'approvazione",
-        );
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Errore durante l'approvazione",
+        });
       }
     }),
 

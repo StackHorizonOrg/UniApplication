@@ -1,3 +1,5 @@
+"use client";
+
 import { it } from "date-fns/locale";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";

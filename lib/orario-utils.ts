@@ -110,31 +110,30 @@ export function parseOrarioData(
 }
 
 const COLOR_PALETTE = [
-  "#00D4FF", // Cyan
-  "#FF3366", // Pink
-  "#00FF88", // Green
-  "#FFAA00", // Orange
-  "#A259FF", // Purple
-  "#FF6F00", // Deep Orange
-  "#009688", // Teal
-  "#C51162", // Magenta
-  "#1976D2", // Blue
-  "#43A047", // Dark Green
-  "#F44336", // Red
-  "#8D6E63", // Brown
-  "#607D8B", // Blue Grey
-  "#E91E63", // Pink 2
-  "#9C27B0", // Purple 2
-  "#2196F3", // Blue 2
-  "#00BCD4", // Cyan 2
-  "#4CAF50", // Green 2
-  "#8BC34A", // Light Green
-  "#CDDC39", // Lime
-  "#FFEB3B", // Yellow
-  "#FFC107", // Amber
+  "#00D4FF",
+  "#FF3366",
+  "#00FF88",
+  "#FFAA00",
+  "#A259FF",
+  "#FF6F00",
+  "#009688",
+  "#C51162",
+  "#1976D2",
+  "#43A047",
+  "#F44336",
+  "#8D6E63",
+  "#607D8B",
+  "#E91E63",
+  "#9C27B0",
+  "#2196F3",
+  "#00BCD4",
+  "#4CAF50",
+  "#8BC34A",
+  "#CDDC39",
+  "#FFEB3B",
+  "#FFC107",
 ];
 
-// Funzione hash semplice per generare un colore se la palette finisce o per aumentare l'entropia
 function stringToColor(str: string): string {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -159,11 +158,8 @@ export function getMateriaColorMap(materie: string[]): Record<string, string> {
 
   const colorMap: Record<string, string> = {};
   uniqueMaterie.forEach((mat, idx) => {
-    if (idx < COLOR_PALETTE.length) {
-      colorMap[mat] = COLOR_PALETTE[idx];
-    } else {
-      colorMap[mat] = stringToColor(mat);
-    }
+    colorMap[mat] =
+      idx < COLOR_PALETTE.length ? COLOR_PALETTE[idx] : stringToColor(mat);
   });
   return colorMap;
 }

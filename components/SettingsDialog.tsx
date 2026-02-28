@@ -22,6 +22,7 @@ import {
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { PushNotificationManager } from "@/components/PushNotificationManager";
 import { AcademicYearPicker } from "@/components/ui/academic-year-picker";
 import {
   Select,
@@ -35,7 +36,6 @@ import type { Course } from "@/lib/courses";
 import { useLocalStorage, useUserId } from "@/lib/hooks";
 import { extractCalendarId } from "@/lib/orario-utils";
 import { cn } from "@/lib/utils";
-import { PushNotificationManager } from "./PushNotificationManager";
 
 const INITIAL_HIDDEN_SUBJECTS: string[] = [];
 
@@ -550,7 +550,6 @@ export function SettingsDialog({
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCourseId, setCopiedCourseId] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-
   const [dialogStep, setDialogStep] = useState<"course" | "subjects">("course");
 
   const userId = useUserId();
@@ -726,11 +725,7 @@ export function SettingsDialog({
         setCourseName("");
         setStoredCourseId("");
 
-        if (calendarUrl.includes("http")) {
-          setCalendarUrlStore(calendarUrl);
-        } else {
-          setCalendarUrlStore("");
-        }
+        setCalendarUrlStore(calendarUrl.includes("http") ? calendarUrl : "");
         onClose();
       } catch (error) {
         console.error(error);
@@ -741,18 +736,12 @@ export function SettingsDialog({
         return;
       }
 
-      const newIds = selectedCourses.map((c) => c.linkId);
-      const newNames = selectedCourses.map((c) => c.name);
-      const newCourseIds = selectedCourses.map((c) => c.id);
-
-      setCalendarIds(newIds);
-      setCourseNames(newNames);
-      setCourseIds(newCourseIds);
-
+      setCalendarIds(selectedCourses.map((c) => c.linkId));
+      setCourseNames(selectedCourses.map((c) => c.name));
+      setCourseIds(selectedCourses.map((c) => c.id));
       setCalendarId("");
       setCourseName("");
       setStoredCourseId("");
-
       onClose();
     }
   };

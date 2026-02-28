@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   uniapplication:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "3001:3001"
     env_file:
@@ -12,4 +14,4 @@ services:
     environment:
       - TZ=Europe/Rome
       - PORT=3001
-
+      - HOSTNAME=0.0.0.0

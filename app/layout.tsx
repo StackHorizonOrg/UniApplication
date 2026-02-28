@@ -3,7 +3,7 @@ import { Geist, Noto_Serif } from "next/font/google";
 import "@/app/globals.css";
 import Script from "next/script";
 import type React from "react";
-import { ServiceWorkerRegistration } from "@/app/components/ServiceWorkerRegistration";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { TRPCProvider } from "@/lib/providers";
 
 const geistSans = Geist({

@@ -27,12 +27,12 @@ interface TimetableEvent {
 
 export function generateCourseHash(events: TimetableEvent[]): string {
   const relevantData = events
-    .map((e) => ({
-      t: e.title,
-      d: e.date,
-      ti: e.time,
-      l: e.location,
-      p: e.professor,
+    .map(({ title, date, time, location, professor }) => ({
+      t: title,
+      d: date,
+      ti: time,
+      l: location,
+      p: professor,
     }))
     .sort((a, b) => (a.d + a.ti).localeCompare(b.d + b.ti));
 

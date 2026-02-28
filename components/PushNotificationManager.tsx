@@ -24,14 +24,16 @@ export function PushNotificationManager({ linkId }: { linkId: string }) {
   const checkSubscription = useCallback(async () => {
     try {
       if (!("serviceWorker" in navigator)) return;
-      
+
       const registration = await Promise.race([
         navigator.serviceWorker.ready,
-        new Promise<null>((_, reject) => setTimeout(() => reject(new Error("Timeout SW")), 5000))
+        new Promise<null>((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout SW")), 5000),
+        ),
       ]);
 
       if (!registration) return;
-      
+
       const subscription = await registration.pushManager.getSubscription();
       setIsSubscribed(!!subscription);
     } catch (e) {
@@ -60,18 +62,19 @@ export function PushNotificationManager({ linkId }: { linkId: string }) {
       const result = await Notification.requestPermission();
       setPermission(result);
 
-            if (result !== "granted") {
-              setLoading(false);
-              return;
-            }
-      
-            const registration = await Promise.race([
-              navigator.serviceWorker.ready,
-              new Promise<ServiceWorkerRegistration>((_, reject) => setTimeout(() => reject(new Error("Timeout SW")), 5000))
-            ]);
-            
-            const subscription = await registration.pushManager.subscribe({
-      
+      if (result !== "granted") {
+        setLoading(false);
+        return;
+      }
+
+      const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise<ServiceWorkerRegistration>((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout SW")), 5000),
+        ),
+      ]);
+
+      const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
@@ -103,9 +106,11 @@ export function PushNotificationManager({ linkId }: { linkId: string }) {
     try {
       const registration = await Promise.race([
         navigator.serviceWorker.ready,
-        new Promise<ServiceWorkerRegistration>((_, reject) => setTimeout(() => reject(new Error("Timeout SW")), 5000))
+        new Promise<ServiceWorkerRegistration>((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout SW")), 5000),
+        ),
       ]);
-      
+
       const subscription = await registration.pushManager.getSubscription();
       if (subscription) {
         await subscription.unsubscribe();

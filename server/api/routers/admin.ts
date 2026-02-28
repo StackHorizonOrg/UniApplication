@@ -1,6 +1,7 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { createAdminToken, verifyAdminPassword } from "@/lib/admin";
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 
 export const adminRouter = createTRPCRouter({
   login: publicProcedure
@@ -13,7 +14,10 @@ export const adminRouter = createTRPCRouter({
       const isValid = verifyAdminPassword(input.password);
 
       if (!isValid) {
-        throw new Error("Password non corretta");
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Password non corretta",
+        });
       }
 
       const token = createAdminToken(input.password);

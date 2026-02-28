@@ -157,7 +157,6 @@ export default function NextLessonCard({
       const lEndMin = timeToMinutes(lEnd);
       if (lStartMin === null || lEndMin === null) return false;
 
-      // Overlap logic: start1 < end2 AND end1 > start2
       return startMin < lEndMin && endMin > lStartMin;
     });
   };

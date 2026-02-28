@@ -1,6 +1,8 @@
+"use client";
+
 import { Calendar } from "lucide-react";
+import { CalendarDayView } from "@/components/CalendarDayView";
 import type { DaySchedule } from "@/lib/orario-utils";
-import { CalendarDayView } from "./CalendarDayView";
 
 interface DayViewProps {
   day: DaySchedule | null;

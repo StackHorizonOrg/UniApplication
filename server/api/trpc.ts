@@ -49,16 +49,12 @@ const isAdminMiddleware = t.middleware(({ ctx, next }) => {
 
 const analyticsMiddleware = t.middleware(async ({ ctx, next, path, type }) => {
   if (ctx.userId) {
+    const userId = ctx.userId;
     void (async () => {
       try {
-        const userId = ctx.userId;
-        if (!userId) return;
-
         await db
           .insert(analyticsUsers)
-          .values({
-            id: userId,
-          })
+          .values({ id: userId })
           .onDuplicateKeyUpdate({
             set: { lastSeen: sql`CURRENT_TIMESTAMP` },
           });
@@ -66,7 +62,7 @@ const analyticsMiddleware = t.middleware(async ({ ctx, next, path, type }) => {
         await db.insert(apiLogs).values({
           endpoint: path,
           method: type,
-          userId: ctx.userId,
+          userId,
         });
       } catch (err) {
         console.error("Error logging analytics:", err);

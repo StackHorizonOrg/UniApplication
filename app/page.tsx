@@ -8,20 +8,20 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarDayDialog } from "@/app/components/CalendarDayDialog";
+import { CalendarDayDialog } from "@/components/CalendarDayDialog";
+import { CalendarView } from "@/components/CalendarView";
+import { DayView } from "@/components/DayView";
+import { MonthlyView } from "@/components/MonthlyView";
+import NextLessonCard from "@/components/NextLessonCard";
+import { NotificationsIntroDialog } from "@/components/NotificationsIntroDialog";
+import { SettingsDialog } from "@/components/SettingsDialog";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { WelcomeDialog } from "@/components/WelcomeDialog";
 import { api } from "@/lib/api";
 import { useLocalStorage } from "@/lib/hooks";
 import type { DaySchedule } from "@/lib/orario-utils";
 import { getMateriaColorMap, parseOrarioData } from "@/lib/orario-utils";
 import { cn } from "@/lib/utils";
-import { CalendarView } from "./components/CalendarView";
-import { DayView } from "./components/DayView";
-import { MonthlyView } from "./components/MonthlyView";
-import NextLessonCard from "./components/NextLessonCard";
-import { NotificationsIntroDialog } from "./components/NotificationsIntroDialog";
-import { SettingsDialog } from "./components/SettingsDialog";
-import { ThemeToggle } from "./components/ThemeToggle";
-import { WelcomeDialog } from "./components/WelcomeDialog";
 
 export default function Home() {
   const _router = useRouter();

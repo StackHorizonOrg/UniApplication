@@ -1,8 +1,9 @@
+import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { pushSubscriptions } from "@/lib/db/schema";
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 
 export const notificationsRouter = createTRPCRouter({
   subscribe: publicProcedure
@@ -20,11 +21,18 @@ export const notificationsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      if (!ctx.userId) throw new Error("User ID non trovato");
+      const { userId } = ctx;
+
+      if (!userId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "User ID non trovato",
+        });
+      }
 
       const existing = await db.query.pushSubscriptions.findFirst({
         where: and(
-          eq(pushSubscriptions.userId, ctx.userId),
+          eq(pushSubscriptions.userId, userId),
           eq(pushSubscriptions.linkId, input.linkId),
           eq(pushSubscriptions.endpoint, input.subscription.endpoint),
         ),
@@ -35,11 +43,12 @@ export const notificationsRouter = createTRPCRouter({
           .update(pushSubscriptions)
           .set({ filters: JSON.stringify(input.filters || []) })
           .where(eq(pushSubscriptions.id, existing.id));
+
         return { success: true };
       }
 
       await db.insert(pushSubscriptions).values({
-        userId: ctx.userId,
+        userId,
         linkId: input.linkId,
         endpoint: input.subscription.endpoint,
         p256dh: input.subscription.keys.p256dh,
@@ -53,12 +62,14 @@ export const notificationsRouter = createTRPCRouter({
   updateAllFilters: publicProcedure
     .input(z.object({ filters: z.array(z.string()) }))
     .mutation(async ({ input, ctx }) => {
-      if (!ctx.userId) return { success: false };
+      const { userId } = ctx;
+
+      if (!userId) return { success: false };
 
       await db
         .update(pushSubscriptions)
         .set({ filters: JSON.stringify(input.filters) })
-        .where(eq(pushSubscriptions.userId, ctx.userId));
+        .where(eq(pushSubscriptions.userId, userId));
 
       return { success: true };
     }),
@@ -66,13 +77,15 @@ export const notificationsRouter = createTRPCRouter({
   unsubscribe: publicProcedure
     .input(z.object({ linkId: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      if (!ctx.userId) return { success: false };
+      const { userId } = ctx;
+
+      if (!userId) return { success: false };
 
       await db
         .delete(pushSubscriptions)
         .where(
           and(
-            eq(pushSubscriptions.userId, ctx.userId),
+            eq(pushSubscriptions.userId, userId),
             eq(pushSubscriptions.linkId, input.linkId),
           ),
         );

@@ -35,6 +35,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { AcademicYearPicker } from "@/components/ui/academic-year-picker";
 import {
   Dialog,
@@ -55,7 +56,6 @@ import { api } from "@/lib/api";
 import type { Course } from "@/lib/courses";
 import { extractCalendarId } from "@/lib/orario-utils";
 import { cn } from "@/lib/utils";
-import { ThemeToggle } from "../components/ThemeToggle";
 
 type FilterType = "all" | "pending" | "approved" | "rejected";
 

@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useRef } from "react";
+import { CalendarDayView } from "@/components/CalendarDayView";
 import type { DaySchedule } from "@/lib/orario-utils";
-import { CalendarDayView } from "./CalendarDayView";
 
 interface CalendarDayDialogProps {
   day: DaySchedule;

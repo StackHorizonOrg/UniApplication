@@ -57,7 +57,6 @@ export async function GET(req: Request) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Errore interno";
-    console.error("Errore nella route pubblica:", err);
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: {

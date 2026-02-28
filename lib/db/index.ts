@@ -14,9 +14,13 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL is not defined in environment variables");
 }
 
-// Rimuove eventuali virgolette doppie o singole all'inizio e alla fine
-const cleanUrl = databaseUrl.replace(/^["'](.+)["']$/, '$1');
+const cleanUrl = databaseUrl.replace(/^["'](.+)["']$/, "$1");
 
-const connection = mysql.createPool(cleanUrl);
+const connection = mysql.createPool({
+  uri: cleanUrl,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+});
 
 export const db = drizzle(connection, { schema, mode: "default" });

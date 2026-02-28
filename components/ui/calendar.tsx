@@ -1,3 +1,5 @@
+"use client";
+
 import dayjs from "dayjs";
 import "dayjs/locale/it";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -144,13 +146,11 @@ function Calendar({
             month: "space-y-4",
             month_caption: "hidden",
             nav: "hidden",
-
             month_grid: "w-full border-collapse space-y-1",
             weekdays: "flex",
             weekday:
               "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
             week: "flex w-full mt-2",
-
             day: cn(
               "h-9 w-9 text-center text-sm p-0 relative",
               "[&:has([aria-selected].day-range-end)]:rounded-r-full",
@@ -160,22 +160,18 @@ function Calendar({
               "last:[&:has([aria-selected])]:rounded-r-full",
               "focus-within:relative focus-within:z-20",
             ),
-
             day_button: cn(
               buttonVariants({ variant: "ghost" }),
               "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-full",
               "focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none",
             ),
-
             range_end: "day-range-end",
             range_start: "day-range-start",
-
             selected: cn(
               "bg-primary text-primary-foreground rounded-full",
               "hover:bg-primary hover:text-primary-foreground",
               "focus:bg-primary focus:text-primary-foreground",
             ),
-
             today: "bg-accent text-accent-foreground rounded-full",
             outside:
               "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",

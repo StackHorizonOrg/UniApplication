@@ -17,12 +17,20 @@ export async function POST(req: Request) {
       linkId: body.linkId,
     });
 
-    return new Response(JSON.stringify(result), { headers: corsHeaders });
+    return new Response(JSON.stringify(result), {
+      headers: {
+        "Content-Type": "application/json",
+        ...corsHeaders,
+      },
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Errore interno";
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
-      headers: corsHeaders,
+      headers: {
+        "Content-Type": "application/json",
+        ...corsHeaders,
+      },
     });
   }
 }

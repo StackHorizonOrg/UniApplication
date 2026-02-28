@@ -57,15 +57,8 @@ export async function addCourse(
   const id = `course-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 
   await db.insert(courses).values({
+    ...course,
     id,
-    name: course.name,
-    linkId: course.linkId,
-    year: course.year,
-    academicYear: course.academicYear,
-    status: course.status,
-    verified: course.verified,
-    addedBy: course.addedBy,
-    userId: course.userId,
   });
 
   const newCourse = await db.query.courses.findFirst({

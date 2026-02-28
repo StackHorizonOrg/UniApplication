@@ -10,12 +10,8 @@ export function ServiceWorkerRegistration() {
     ) {
       navigator.serviceWorker
         .register("/sw.js")
-        .then((reg) =>
-          console.log("Service Worker registrato con successo", reg.scope),
-        )
-        .catch((err) =>
-          console.error("Errore registrazione Service Worker", err),
-        );
+        .then((reg) => console.log("Service Worker registrato", reg.scope))
+        .catch((err) => console.error("Errore Service Worker", err));
     }
   }, []);
 

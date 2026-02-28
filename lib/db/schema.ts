@@ -1,12 +1,12 @@
 import {
   boolean,
   int,
+  longtext,
   mysqlEnum,
   mysqlTable,
+  text,
   timestamp,
   varchar,
-  text,
-  longtext,
 } from "drizzle-orm/mysql-core";
 
 export const courses = mysqlTable("courses", {

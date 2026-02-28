@@ -1,3 +1,5 @@
+"use client";
+
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import {
   AlertTriangle,
@@ -212,14 +214,13 @@ function EventCarousel({
           <ChevronLeft className="w-4 h-4 text-zinc-500" />
         </button>
         <span className="text-[10px] font-mono font-bold text-zinc-400 px-1">
-          {index + 1} {" / "} {events.length}
+          {index + 1} / {events.length}
         </span>
         <button
           type="button"
           onClick={next}
           className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-md transition-colors"
         >
-          {" "}
           <ChevronRight className="w-4 h-4 text-zinc-500" />
         </button>
       </div>
@@ -266,7 +267,6 @@ export function CalendarDayView({ day, onClose }: CalendarDayViewProps) {
           b.endMin - b.startMin - (a.endMin - a.startMin),
       );
 
-    // Group overlapping events into blocks (clusters)
     const groups: {
       events: TimelineEvent[];
       start: number;
@@ -289,7 +289,6 @@ export function CalendarDayView({ day, onClose }: CalendarDayViewProps) {
       }
     }
 
-    // Process each group to determine max overlap and local column placement
     for (const group of groups) {
       const columns: TimelineEvent[][] = [];
       const eventMetadata = new Map<
@@ -336,8 +335,6 @@ export function CalendarDayView({ day, onClose }: CalendarDayViewProps) {
 
           meta.totalCols = columns.length;
           meta.isOverlapping = overlappingCount > 0;
-
-          // Attach metadata directly to event for easier rendering
           Object.assign(event, meta);
         }
       }
@@ -455,7 +452,7 @@ export function CalendarDayView({ day, onClose }: CalendarDayViewProps) {
                 />
               ))}
 
-              {processedEvents.groups.map((group, _gIdx) => {
+              {processedEvents.groups.map((group) => {
                 const groupTop =
                   ((group.start - START_HOUR * 60) / 30) * HALF_HOUR_HEIGHT;
                 const groupDuration = group.end - group.start;
